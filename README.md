@@ -2,16 +2,17 @@
 
 Palisade is the reference harness built across *Engineering an Agentic AI Security Harness* (Travis Lelle, Edition 1.0, October 2026). It is pedagogical: error handling is thin, there are no retries, and each chapter says what production would add. The control plane is not thin.
 
-This folder is the Python package the book's code imports from. This README gets you set up and walks you through **Lab 1**, the first hands-on step in the book, where you map one of your own automations against the harness layers and classify what it does using the shared types.
+This repository is the Python package the book's code imports from. This README gets you set up and walks you through **Lab 1**, the first hands-on step in the book, where you map one of your own automations against the harness layers and classify what it does using the shared types.
 
-## What is in this folder
+## What is in this repository
 
 ```text
-palisade/
+palisade/                # this repository, once cloned into your working directory
+  README.md
   __init__.py
   core/
     __init__.py
-    types.py        # the shared vocabulary; already written; import it, never redefine it
+    types.py             # the shared vocabulary; already written; import it, never redefine it
 ```
 
 `core/types.py` is the only module that ships complete. Everything else in Palisade (the governed loop, router, gateway, ledger, policy engine, and the rest) is built chapter by chapter from the code in the book, one module per chapter, in the sections titled "Palisade build thread." Appendix H.2 shows the full layout the package grows into and Appendix H.4 maps each module to the chapter that builds it.
@@ -20,17 +21,19 @@ Every snippet in the book imports its types from `palisade/core/types.py`, so a 
 
 ## Set up
 
-Palisade targets Python 3.12. Run these from the directory that contains the `palisade/` folder (the repository root).
+Palisade targets Python 3.12. Make a working directory, clone this repository into it, and run everything from the working directory, the folder that contains `palisade/`. The clone is the package itself, so do not run Python from inside it.
 
 ```bash
+mkdir palisade-work && cd palisade-work     # any name; this is your working directory
+git clone https://github.com/Travis-ML/palisade.git
 python3.12 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 python -m pip install --upgrade pip
-pip install pydantic               # all that types.py needs (pydantic v2)
+pip install "pydantic>=2"          # all that types.py needs
 python -c "import palisade.core.types as t; print(t.ActionClass)"
 ```
 
-If the last line prints a class, you are ready. Later chapters need more packages and, for the policy engine and the range, Docker. Appendix H.6 lists the packages and Appendix I sets up the lab environment; you do not need either for Lab 1.
+If the last line prints a class, you are ready. `ModuleNotFoundError: No module named 'palisade'` means Python is running from inside the clone; run `cd ..` and try again. Later chapters need more packages and, for the policy engine and the range, Docker. Appendix H.6 lists the packages and Appendix I sets up the lab environment; you do not need either for Lab 1.
 
 ## About `core/types.py`
 
@@ -44,7 +47,7 @@ Most security teams already run an ungoverned harness without calling it one: a 
 
 **1. Pick the automation.** Choose one that takes an action in a production system without a human in the immediate path. If nothing qualifies, pick the closest. In one sentence each, write down what triggers it, what it reads, and what it changes.
 
-**2. Create `lab1-inventory.md`.** Copy the template below. Fill the eight-row table literally. "Guardrail and policy: an if-statement checking that the hostname does not start with `dc-`" is a real answer, and so is "nothing."
+**2. Create `lab1-inventory.md`** in your working directory, next to the clone and not inside it. Copy the template below. Fill the eight-row table literally. "Guardrail and policy: an if-statement checking that the hostname does not start with `dc-`" is a real answer, and so is "nothing."
 
 **3. Find the credential.** Record what the automation authenticates with, who else uses it, what it can do beyond what this automation needs, and when it was last rotated. If you cannot find out, write that down; it is a finding. Record where the credential lives and its properties, never its value.
 
@@ -56,7 +59,7 @@ Most security teams already run an ungoverned harness without calling it one: a 
 
 **What you end up with** is a one-page inventory of one real automation. For most teams the identity, accounting, and governance rows are mostly empty, the credential is shared and over-privileged, and the replay test fails or takes more than an hour. That is the expected result. Keep the file: Lab 11 asks you to write the Rules of Engagement this automation should have been running under, and Lab 26 asks what rung of the autonomy ladder it is on and what evidence would justify the next one.
 
-> **Keep the inventory private.** It describes a real production system, its credentials, and its gaps. Do not commit it to a public repository or a public fork, and do not paste secrets into it.
+> **Keep the inventory private.** It describes a real production system, its credentials, and its gaps. Do not commit it to a public repository or a public fork, and do not paste secrets into it. Creating it next to the clone, as in step 2, means a `git add .` inside this repository cannot pick it up.
 
 ### Inventory template
 
@@ -126,7 +129,7 @@ If the same automation can land in different cells depending on its arguments (a
 
 ### Compute the key
 
-Run from the repository root. Pydantic accepts the plain string values, and rejects anything that is not one of them, listing what is allowed.
+Run from your working directory, the parent of `palisade/`. Pydantic accepts the plain string values, and rejects anything that is not one of them, listing what is allowed.
 
 ```bash
 python -c "
@@ -179,4 +182,4 @@ Paste your own key at the bottom of `lab1-inventory.md`.
 - **Appendix H**: the repository layout, `types.py` reproduced in full, the module-by-module map, canonical names, and installation.
 - **Appendix I**: the lab environment (Docker Compose, the policy engine, the trace collector, and the isolated range).
 
-To build Palisade along with the book, start at Chapter 4, where the first skeleton goes in, and follow each chapter's Palisade build thread. Each lab runs with `python -m palisade.labs.chNN`.
+To build Palisade along with the book, start at Chapter 4, where the first skeleton goes in, and follow each chapter's Palisade build thread. Labs that run code have an entry point at `palisade/labs/chNN.py`, run as `python -m palisade.labs.ch09` (Appendix H.2).
