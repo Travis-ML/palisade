@@ -1,0 +1,12 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {"Sid": "AppendOnly", "Effect": "Allow",
+     "Action": ["s3:PutObject"],
+     "Resource": "arn:aws:s3:::palisade-ledger-prod/*",
+     "Condition": {"StringEquals": {"s3:x-amz-object-lock-mode": "COMPLIANCE"}}},
+    {"Sid": "NeverAnythingElse", "Effect": "Deny",
+     "NotAction": ["s3:PutObject"],
+     "Resource": ["arn:aws:s3:::palisade-ledger-prod", "arn:aws:s3:::palisade-ledger-prod/*"]}
+  ]
+}

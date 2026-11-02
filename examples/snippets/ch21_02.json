@@ -1,0 +1,7 @@
+{"step": 5, "agent_id": "spiffe://palisade.example/agent/response", "autonomy_tier": 4,
+ "reasoning_summary": "plan validation: step denied; returned to planner for revision (1 of 2)",
+ "proposed_action": {"tool_name": "fw_block_range", "arguments": {"cidr": "203.0.113.0/16", "ttl_minutes": 1440},
+                     "action_class": {"domain": "production_control", "reversibility": "reversible", "blast_radius": "enterprise"}},
+ "policy_decision": {"verdict": "deny", "rule_id": "roe.ceiling.missing", "required_tier": 5, "effective_tier": 0,
+                     "reasons": ["roe.ceiling.missing", "taxonomy.unknown_class"]},
+ "approval": null, "execution": null, "prev_hash": "e04a...77b3", "record_hash": "1b9e...4d20"}

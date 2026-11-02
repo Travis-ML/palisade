@@ -1,0 +1,43 @@
+# skills/soc/triage_oauth_consent_grant.yaml
+name: triage_oauth_consent_grant
+version: 3.2.0
+owner: detection-engineering@palisade.example
+plane: defensive
+description: Triage an alert for a new OAuth consent grant to a third-party application.
+applies_to:
+  alert_families: ["idp.oauth.consent_granted", "idp.oauth.app_added"]
+inputs:
+  type: object
+  required: [alert_id, tenant]
+  properties:
+    alert_id: {type: string}
+    tenant: {type: string, pattern: "^tenant-[a-z0-9]+$"}
+tools_allowed: [siem_query, ti_lookup_indicator, notify_user, idp_revoke_sessions, ticket_create]
+ceilings:
+  - action_class: {domain: observe, reversibility: reversible, blast_radius: single}
+    max_tier: 5
+  - action_class: {domain: enrich, reversibility: reversible, blast_radius: single}
+    max_tier: 5
+  - action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single}
+    max_tier: 4
+  - action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}
+    max_tier: 3
+    rate_limit: "1/10m"
+required_gates:
+  - action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}
+    gate: five_question
+    approvers: ["role:ir_oncall"]
+knowledge:
+  - runbooks/idp/oauth-consent-grant@>=4
+  - intel/reports/oauth-app-abuse-campaign
+evals: evals/soc/oauth_consent_grant.yaml
+procedure: |
+  1. Retrieve the application record and the granting user's identity record.
+  2. siem_query saved query idp_app_grants_30d for other grants to the same app id.
+  3. ti_lookup_indicator on the publisher domain and each redirect URI.
+  4. notify_user: ask the granting user whether they initiated the grant. Wait at most 10 minutes.
+  5. Form hypotheses. Malicious with confidence >= 0.8 and a confirmed non-user-initiated grant
+     may propose idp_revoke_sessions for that single user, with all five intent fields.
+  6. ticket_create with the glass-box verdict attached. Cite everything.
+signature: "MEUCIQ...base64..."
+signer_key_id: detections-2026q4

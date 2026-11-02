@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: offensive-egress-default-deny
+  namespace: palisade-offensive
+spec:
+  podSelector: {}
+  policyTypes: [Egress]
+  egress:
+    - to:
+        - podSelector: {}                      # same namespace only: range, vLLM, gateway, OPA, broker
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: palisade-ledger}
+          podSelector:
+            matchLabels: {app: ledger-ingest}
+      ports: [{protocol: TCP, port: 4318}]      # OTLP/HTTP, write only
+    - to:
+        - namespaceSelector:
+            matchLabels: {kubernetes.io/metadata.name: kube-system}
+          podSelector:
+            matchLabels: {k8s-app: kube-dns}
+      ports: [{protocol: UDP, port: 53}]

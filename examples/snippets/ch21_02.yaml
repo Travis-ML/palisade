@@ -1,0 +1,5 @@
+intent: "Invalidate the credential the unauthorized party holds so that re-authentication after the disable period is impossible without a verified reset."
+necessity: "Revoke and disable (steps 2 and 3) are in the plan and reversible, but they do not invalidate the stored credential and the disable expires in 240 minutes. A reset is the only step that removes the credential itself."
+harm: "If the verdict is wrong, a legitimate user is locked out until the help desk verifies identity in person or by video; one to two hours of one person's time. No data loss."
+data: "ev_2c (sign-in from unfamiliar country 40 minutes after a registered-workstation sign-in), ev_5a (new authentication method registered from that session), ev_7d (mailbox rule hiding finance messages); all in the query log of vrd_8b6dff71ec0b."
+alternatives: "Disable only: rejected, the credential persists past the TTL. Location-based conditional access block: rejected, the source IP is a consumer VPN exit that changes in seconds."

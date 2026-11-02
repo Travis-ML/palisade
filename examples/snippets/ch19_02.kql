@@ -1,0 +1,12 @@
+let lookback = 14d;
+let tasks = SecurityEvent
+| where TimeGenerated > ago(lookback) and EventID == 4698
+| project TaskTime = TimeGenerated, Computer, SubjectUserName, TaskName;
+let rdp = SecurityEvent
+| where TimeGenerated > ago(lookback) and EventID == 4624 and LogonType == 10
+| project LogonTime = TimeGenerated, Computer, TargetUserName, IpAddress;
+tasks
+| join kind=inner rdp on Computer
+| where SubjectUserName =~ TargetUserName
+| where LogonTime between ((TaskTime - 30m) .. TaskTime)
+| project Computer, SubjectUserName, IpAddress, LogonTime, TaskTime, TaskName

@@ -1,0 +1,19 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "HarnessComponentsAppendOnly",
+      "Effect": "Allow",
+      "Principal": {"AWS": "arn:aws:iam::111122223333:role/palisade-ledger-writer"},
+      "Action": ["s3:PutObject"],
+      "Resource": "arn:aws:s3:::palisade-ledger-prod/*"
+    },
+    {
+      "Sid": "NobodyDeletesOrShortensRetention",
+      "Effect": "Deny",
+      "Principal": "*",
+      "Action": ["s3:DeleteObject", "s3:DeleteObjectVersion", "s3:PutObjectRetention", "s3:PutBucketObjectLockConfiguration"],
+      "Resource": ["arn:aws:s3:::palisade-ledger-prod", "arn:aws:s3:::palisade-ledger-prod/*"]
+    }
+  ]
+}

@@ -1,0 +1,21 @@
+# palisade/capabilities/alert_triage/capability.yaml
+name: alert_triage
+version: 1.4.0
+plane: defensive
+owner: soc-lead@palisade.example
+agent_id: spiffe://palisade.example/agent/triage
+pattern: workflow_with_escalation
+engagement_ids: [eng_2026q4_soc_triage]
+tools:
+  - {name: siem_query,          action_class: {domain: observe, reversibility: reversible, blast_radius: group},  per_run_limit: 6}
+  - {name: edr_get_host,        action_class: {domain: observe, reversibility: reversible, blast_radius: single}}
+  - {name: idp_get_user,        action_class: {domain: observe, reversibility: reversible, blast_radius: single}}
+  - {name: mail_get_message,    action_class: {domain: observe, reversibility: reversible, blast_radius: single}}
+  - {name: cloud_get_activity,  action_class: {domain: observe, reversibility: reversible, blast_radius: single}}
+  - {name: ti_lookup_indicator, action_class: {domain: enrich,  reversibility: reversible, blast_radius: single}}
+  - {name: chatops_ask_user,    action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}, per_run_limit: 1}
+forbidden_domains: [production_control, offense]     # CI fails the build if any tool violates this
+budget: {max_steps: 30, max_wall_seconds: 120, max_tokens: 150000, max_cost_usd: 0.60, max_tool_calls: 20}
+escalation: {max_workers: 6, investigation_families: ["lateral_movement\\..*", "persistence\\.domain\\..*", "cloud\\.privilege_escalation\\..*"]}
+review: {shadow_review: all, production_sample_rate: 0.15, stamp_required_for_severity: [critical]}
+evals: {suite: evals/triage_suite.yaml, min_precision: 0.90, max_false_negative_rate: 0.05, max_over_broad_rate: 0.01, adversarial_required: true}

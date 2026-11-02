@@ -1,0 +1,83 @@
+# knowledge/standards/golden_principles.yaml  (excerpt; version 2026.10)
+version: "2026.10"
+owner: appsec-standards@palisade.example
+principles:
+  - id: GP-AUTHZ-01
+    title: Object-level authorization on every data access
+    statement: >
+      Any handler that reads or mutates a resource identified by a client-supplied id
+      must verify the caller is authorized for that specific object before access.
+    applies_to: [python_web, go_service]
+    severity: high
+    blocking: true
+    cwe: [CWE-639, CWE-862]
+    detection_hints: ["handler loads by id from request without ownership/tenant check"]
+    fix_guidance: "Resolve the object through a tenant- or owner-scoped repository method."
+
+  - id: GP-SECRETS-01
+    title: No credentials in source, config, or prompts
+    statement: Secrets are brokered at runtime; none appear in tracked files or prompt templates.
+    applies_to: [all]
+    severity: critical
+    blocking: true
+    cwe: [CWE-798]
+    fix_guidance: "Move to the secrets broker; rotate the exposed value; add a pre-commit hook."
+
+  - id: GP-DESER-01
+    title: No unsafe deserialization of untrusted input
+    statement: pickle, yaml.load without SafeLoader, and equivalent constructs are forbidden on data of external origin.
+    applies_to: [python_web]
+    severity: high
+    blocking: true
+    cwe: [CWE-502]
+
+  - id: GP-AI-01
+    title: Tools are typed and narrow
+    statement: >
+      A tool exposed to a model takes typed, enumerated, or allowlisted arguments and performs one
+      capability. Tools that accept free-form shell, SQL, or code strings are forbidden outside a
+      hypervisor-isolated sandbox with a default-deny network.
+    applies_to: [ai_agent]
+    severity: critical
+    blocking: true
+    references: ["OWASP ASI02", "OWASP ASI05"]
+
+  - id: GP-AI-02
+    title: MCP servers carry the control set
+    statement: >
+      An MCP server or client in first-party code authenticates callers, pins server versions and
+      hashes tool descriptions, and routes every call through the gateway. No direct client-to-server
+      connections from production agents.
+    applies_to: [ai_agent]
+    severity: high
+    blocking: false
+    references: ["OWASP ASI04", "Control A11"]
+
+  - id: GP-AI-03
+    title: Untrusted content is never instruction
+    statement: >
+      Content from alerts, emails, files, web pages, tool results, or tool descriptions is tagged
+      untrusted, delimited, and spotlighted before reaching a model, and is never concatenated
+      into system or developer instructions.
+    applies_to: [ai_agent]
+    severity: high
+    blocking: true
+    references: ["OWASP ASI01", "Control A9"]
+
+  - id: GP-AI-04
+    title: Model output is validated before it acts
+    statement: >
+      Structured output is schema-validated and out-of-vocabulary actions are rejected; model output
+      is never passed to eval, exec, subprocess, or a query builder without validation.
+    applies_to: [ai_agent]
+    severity: critical
+    blocking: true
+    references: ["OWASP ASI05"]
+
+  - id: GP-AI-05
+    title: Every agent loop has budgets and a halt
+    statement: Loops bound steps, wall time, tokens, cost, and tool calls, and halt when governance is unavailable.
+    applies_to: [ai_agent]
+    severity: medium
+    blocking: false
+    references: ["OWASP ASI08", "Control A8", "Control A13"]

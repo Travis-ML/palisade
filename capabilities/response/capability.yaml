@@ -1,0 +1,16 @@
+# palisade/capabilities/response/capability.yaml
+name: response
+version: 2.1.0
+plane: defensive
+owner: ir-lead@palisade.example
+identities:
+  planner:  spiffe://palisade.example/agent/response            # proposes; never issued production credentials
+  executor: spiffe://palisade.example/agent/response-executor   # the only identity the broker issues production_control grants to
+pattern: orchestrator_with_workflow_guardrails
+engagement_ids: [eng_2026q4_soc_response]
+inputs: [GlassBoxVerdict]
+library: library.py
+validation: {max_revisions: 2, require_evidence_before_irreversible_host_action: true, prefer_reversible_sibling: true}
+staging: {canary_size: 1, observe_seconds: 60, batch_size: 5, anomaly_signals: [tool_error, health_probe, new_alert_on_target, helpdesk_spike, breaker_open]}
+breakers: {per_tool: {failure_threshold: 3, window_seconds: 300, cooldown_seconds: 600}, per_system: {failure_threshold: 5, window_seconds: 300, cooldown_seconds: 900}, per_run: {anomaly_threshold: 1}}
+budget: {max_steps: 24, max_wall_seconds: 900, max_tokens: 120000, max_cost_usd: 1.50, max_tool_calls: 16}

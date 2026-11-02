@@ -1,0 +1,39 @@
+title: Scheduled Task Created Executing From User-Writable Path or Encoded PowerShell
+id: 7c1f0a2e-5b7d-4f1c-9a3e-2d6b8e4f0a19
+status: experimental
+description: >
+  Detects creation of a scheduled task (Security 4698) whose action executes from a
+  user-writable directory or launches encoded PowerShell. Validated in hunt
+  hunt_2026_10_07_t1053 against a 90-day labeled corpus (precision 0.80, recall 1.00).
+references:
+  - https://attack.mitre.org/techniques/T1053/005/
+author: Palisade threat hunting (agent-drafted, human-reviewed)
+date: 2026-10-07
+tags:
+  - attack.persistence
+  - attack.t1053.005
+logsource:
+  product: windows
+  service: security
+detection:
+  selection:
+    EventID: 4698
+  exec_path:
+    TaskContent|contains:
+      - 'C:\Users\'
+      - 'C:\ProgramData\'
+      - 'C:\Windows\Temp\'
+  encoded:
+    TaskContent|contains:
+      - '-enc '
+      - '-EncodedCommand'
+      - 'FromBase64String'
+  filter_deploy:
+    SubjectUserName: 'svc_deploy'
+    TaskName|startswith: '\PalisadeDeploy\'
+  filter_signed_updater:
+    TaskContent|contains: '\ProgramData\VendorUpdater\'
+  condition: selection and (exec_path or encoded) and not 1 of filter_*
+falsepositives:
+  - Deployment tooling staging binaries under ProgramData (add a filter with owner approval)
+level: medium

@@ -1,0 +1,23 @@
+# palisade/capabilities/adversarial_testing/capability.yaml
+name: adversarial_testing
+plane: offensive
+description: >
+  Tests AI systems (this harness, and customer systems as a service) against the
+  ATLAS/ASI matrix, using scripted probe suites and an agentic triage layer.
+  Runs only against an isolated target instance on synthetic data, under an
+  active signed RoE.
+requires_roe: true                 # the capability refuses to operate without one
+tools:
+  - probe_suite_run                # launches a registered probe-suite config at the target
+skills:
+  - triage_findings                # the reasoning agent of Section 23.5
+model_routing:
+  allow:
+    - rule: "offensive.tester.less_restricted"   # bound to this plane by Control A19
+  default: deny
+evals:
+  suite: evals/adversarial_testing_suite.yaml
+metrics:
+  - atlas_asi_coverage
+  - exploitable_findings_by_severity
+  - containment_integrity

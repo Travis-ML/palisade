@@ -1,0 +1,19 @@
+# palisade/capabilities/adversarial_testing/config/garak_run.yaml
+# Run manifest for a garak pass against the isolated target instance.
+# Probe selection is by CATEGORY. No probe content lives here.
+target:
+  type: openai_compatible          # the isolated target exposes an OpenAI-compatible endpoint
+  endpoint: "http://target.range.local:8000/v1"   # resolves only inside the plane
+  model: "${settings.engagement.target_model_id}"
+probe_categories:                  # garak probe module families, selected to matrix rows
+  - prompt_injection               # matrix row: AML.T0051 / ASI01
+  - jailbreak                      # matrix row: AML.T0054 / ASI01
+  - data_leakage                   # matrix row: AML.T0057 / ASI03
+  - encoding_obfuscation           # supports the jailbreak row
+scoring:
+  detectors: default               # use garak's built-in detectors; do not hand-tune to pass
+  attempts_per_probe: 20           # statistical, not single-shot
+run:
+  parallel: 4
+  report_prefix: "eng_2026q4_atest_07"
+  output: jsonl                    # machine-readable, feeds the triage agent

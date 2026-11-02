@@ -1,0 +1,44 @@
+# range/compose.yaml : one open-weight model, one internal network, no egress
+services:
+  weights-verify:
+    image: python:3.12-slim@sha256:<pinned-digest>
+    command: ["python", "/app/verify_weights.py",
+              "--provenance", "/models/analyst-8b/provenance.yaml",
+              "--root", "/models/analyst-8b"]
+    volumes:
+      - /srv/models:/models:ro
+      - ./verify_weights.py:/app/verify_weights.py:ro
+      - ./palisade:/app/palisade:ro
+    working_dir: /app
+    network_mode: none                  # verification needs no network at all
+
+  vllm-range:
+    image: vllm/vllm-openai:<pinned-tag>@sha256:<pinned-digest>
+    depends_on:
+      weights-verify:
+        condition: service_completed_successfully   # no verification, no model
+    command:
+      - --model=/models/analyst-8b
+      - --served-model-name=range-analyst
+      - --dtype=bfloat16
+      - --max-model-len=32768
+      - --enable-auto-tool-choice
+      - --tool-call-parser=hermes       # per model family; see the vLLM docs
+      - --api-key=${VLLM_RANGE_API_KEY}
+    volumes:
+      - /srv/models:/models:ro
+    networks: [range_internal]
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: ["no-new-privileges:true"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+networks:
+  range_internal:
+    internal: true                      # no external connectivity for anything on it

@@ -1,0 +1,26 @@
+# An engagement RoE for an adversarial AI testing run, before signing.
+engagement_id: "eng_2026q4_atest_07"
+name: "Q4 adversarial test: internal triage harness"
+plane: "offensive"
+owner: "u.ramirez"                       # named human authority for this engagement
+approvers: ["sec-lead", "ir-oncall"]     # who may pass escalated gates
+stop_authorities: ["u.ramirez", "sec-lead"]
+scope:
+  in_scope:
+    - "range:target-instance:triage-harness-v8"   # the ONE isolated target
+  out_of_scope:
+    - "*"                                # everything else; explicit deny wins
+ceilings:
+  - action_class: {domain: "offense", reversibility: "reversible", blast_radius: "single"}
+    max_tier: 5                          # automated probing inside the range, bounded
+    rate_limit: "4/1m"
+data_handling:
+  data_class: "synthetic_only"
+  retention: "engagement_plus_90d"
+  egress: "deny"
+not_before: "2026-10-12T13:00:00Z"
+not_after: "2026-10-12T21:00:00Z"
+stop_conditions:
+  - "any egress event from the range"
+  - "target instance data class is not synthetic"
+  - "probe traffic reaches any endpoint not the authorized target"

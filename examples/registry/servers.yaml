@@ -1,0 +1,16 @@
+# registry/servers.yaml
+protocol_revision: "2025-11-25"
+servers:
+  - name: palisade-edr
+    version: "1.4.2"
+    image: registry.palisade.example/mcp/edr@sha256:3f9c1b7e4d2a8c6f0e5b9a3d7c1f2e4b6a8d0c2e4f6a8b0c2d4e6f8a0b2c4d6e
+    endpoint: https://edr-mcp.palisade-tools.svc:8000/mcp
+    plane: defensive
+    service_account: svc-mcp-edr            # holds edr:read and edr:isolate, nothing else
+    sbom: sbom/edr.cdx.json
+    attestations: [cosign-signature, cyclonedx]
+    tools:
+      - {name: edr_get_host,     description_hash: 9b1e5c3a7d2f4b6e8a0c2d4f6b8e0a2c4d6f8b0e2a4c6d8f0b2e4a6c8d0f2b4e, signer_key_id: tooling-2026q4}
+      - {name: edr_isolate_host, description_hash: 51aa3c7e9b1d2f4a6c8e0b2d4f6a8c0e2b4d6f8a0c2e4b6d8f0a2c4e6b8d0f2a, signer_key_id: tooling-2026q4}
+      - {name: edr_release_host, description_hash: c04d2e6f8a1b3c5d7e9f1a3b5c7d9e1f3a5b7c9d1e3f5a7b9c1d3e5f7a9b1c3d, signer_key_id: tooling-2026q4}
+    review: {approved_by: u.ramirez, approved_at: "2026-09-30T15:10:00Z", ticket: SEC-4471, next_review: "2026-12-30"}

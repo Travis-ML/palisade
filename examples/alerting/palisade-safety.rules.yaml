@@ -1,0 +1,31 @@
+groups:   # alerting/palisade-safety.rules.yaml: Prometheus-style rules over metrics derived from the ledger export
+  - name: palisade-degradation
+    rules:
+      - alert: AgreementRateDegraded
+        expr: palisade_agreement_rate_7d < on(capability) (palisade_agreement_rate_28d - 0.05)
+        for: 24h
+        labels: {severity: high, owner: capability}
+        annotations: {summary: "agreement for {{ $labels.capability }} fell > 5 points below 28d baseline"}
+      - alert: OverrideRateHigh
+        expr: palisade_override_rate_7d > on(capability) palisade_rung_override_threshold
+        for: 12h
+        labels: {severity: high, owner: capability}
+      - alert: GovernanceUnavailable
+        expr: min(up{job=~"opa|credential-broker|ledger|gateway"}) == 0
+        for: 1m
+        labels: {severity: critical, owner: platform}
+        annotations: {summary: "a governance component is down; loops are halting (A13); this is an outage, not a degradation"}
+  - name: palisade-subversion
+    rules:
+      - alert: DeniedActionBurst
+        expr: sum by (agent_id) (increase(palisade_denied_actions_total[10m])) > 5
+        for: 0m
+        labels: {severity: high, owner: soc}
+        annotations: {summary: "{{ $labels.agent_id }} had > 5 denials in 10m: scope-escalation pressure or injection"}
+      - alert: SpendVelocity
+        expr: sum by (capability) (rate(palisade_cost_usd_total[5m])) * 60 > on(capability) palisade_velocity_limit_usd_per_min
+        for: 2m
+        labels: {severity: high, owner: platform}
+      - alert: NovelToolForAgent
+        expr: palisade_tool_first_seen_age_seconds < 3600 and palisade_tool_calls_total > 0
+        labels: {severity: medium, owner: soc}

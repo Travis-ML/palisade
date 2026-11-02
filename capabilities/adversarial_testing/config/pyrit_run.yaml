@@ -1,0 +1,18 @@
+# palisade/capabilities/adversarial_testing/config/pyrit_run.yaml
+target:
+  kind: prompt_target
+  endpoint: "http://target.range.local:8000/v1"
+orchestration:
+  categories:                      # PyRIT attack categories mapped to matrix rows
+    - goal_hijack                  # ASI01
+    - tool_misuse                  # ASI02
+    - memory_poisoning             # ASI06
+  max_turns: 6                     # bound multi-turn flows
+  max_conversations: 200
+scoring:
+  scorer: self_ask_scale           # PyRIT's scored evaluation; record the scorer version
+budget:
+  max_cost_usd: 25.0               # offensive-plane runs are budgeted too (Control A23)
+output:
+  format: jsonl
+  sink: "eng_2026q4_atest_07/pyrit/"

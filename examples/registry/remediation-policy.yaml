@@ -1,0 +1,4 @@
+# registry/remediation-policy.yaml
+windows_hours: {critical: 72, high: 72, medium: 720, low: 2160}
+on_window_expired: block        # remove the server from the registry; gateway refuses sessions
+exceptions_require: [risk_owner_signature, expiry_date, compensating_control]

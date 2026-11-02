@@ -1,0 +1,14 @@
+{
+  "rest": {
+    "RestGenerator": {
+      "name": "palisade-triage-range",
+      "uri": "https://triage.range.palisade.example/eval/turn",
+      "method": "post",
+      "headers": {"Authorization": "Bearer $RANGE_TOKEN", "Content-Type": "application/json"},
+      "req_template_json_object": {"alert": {"rule": "garak-probe", "host": "host-4471", "description": "$INPUT"}},
+      "response_json": true,
+      "response_json_field": "agent_text",
+      "request_timeout": 60
+    }
+  }
+}

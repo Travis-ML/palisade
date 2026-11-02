@@ -1,0 +1,18 @@
+{
+  "finding_id": "rr_7f3a2c",
+  "principle_id": "GP-AI-03",
+  "standard_version": "2026.10",
+  "skill": "review_ai_agent_code",
+  "route_rule": "lang.python+ai_agent",
+  "repo": "github.com/palisade-example/support-copilot",
+  "path": "copilot/agent.py",
+  "line": 41,
+  "severity": "high",
+  "blocking": true,
+  "confidence": 0.86,
+  "evidence": "ticket['body'] is concatenated into the system prompt at line 41; ticket bodies originate from external customers (ingest.py:17).",
+  "sast_corroboration": null,
+  "explanation": "Customer-authored text reaches the model as instruction. A ticket containing directives can steer the agent's tool calls (OWASP ASI01).",
+  "suggested_fix_ref": "fixes/rr_7f3a2c.diff",
+  "developer_action_required": "Move ticket content to a delimited, untrusted data block and route tool calls through the gateway."
+}

@@ -1,0 +1,85 @@
+name: oauth_grant_review   # palisade/capabilities/oauth_grant_review/capability.yaml
+version: 1.0.0
+plane: defensive
+description: >
+  Review risky OAuth application grants in the identity provider, assess consent-phishing
+  and over-privileged apps against the allowlist, draft tickets, and revoke single grants with approval.
+owner:
+  human: u.ramirez
+  team: identity-security
+  escalation: iam-oncall
+identity:
+  agent_id: spiffe://palisade.example/agent/oauth_grant_review
+  recertify_days: 90
+tools:
+  - name: idp_list_oauth_grants
+    server: palisade-idp
+    version: 1.4.2
+    description_sha256: 3f0c9a1e7d2b4c6f8a0e1b3d5f7a9c2e4b6d8f0a1c3e5b7d9f1a3c5e7b9d1f3a
+    action_class: {domain: observe, reversibility: reversible, blast_radius: single}
+  - name: ti_lookup_indicator
+    server: palisade-ti
+    version: 2.1.0
+    description_sha256: 9b7d5f3a1c8e6b4d2f0a9c7e5b3d1f8a6c4e2b0d9f7a5c3e1b8d6f4a2c0e9b7d
+    action_class: {domain: enrich, reversibility: reversible, blast_radius: single}
+  - name: ticket_create
+    server: palisade-itsm
+    version: 3.0.1
+    description_sha256: 1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e
+    action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single}
+  - name: notify_user
+    server: palisade-chatops
+    version: 1.2.0
+    description_sha256: 7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c
+    action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}
+  - name: idp_revoke_oauth_grant
+    server: palisade-idp
+    version: 1.4.2
+    description_sha256: 5e7b9d1f3a5c7e9b1d3f5a7c9e1b3d5f7a9c1e3b5d7f9a1c3e5b7d9f1a3c5e7b
+    action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}
+skills:
+  - {name: oauth-consent-phishing-triage, path: skills/oauth_consent_phishing.yaml, version: 3}
+  - {name: overprivileged-app-assessment, path: skills/overprivileged_app.yaml, version: 1}
+ceilings:                                   # per action class; never above the taxonomy ceiling (Chapter 26)
+  - action_class: {domain: observe, reversibility: reversible, blast_radius: single}
+    max_tier: 5
+  - action_class: {domain: enrich, reversibility: reversible, blast_radius: single}
+    max_tier: 5
+  - action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single}
+    max_tier: 4
+    rate_limit: "20/1h"
+  - action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}
+    max_tier: 3                             # a sent message cannot be unsent
+  - action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}
+    max_tier: 4
+    rate_limit: "1/10m"                     # a second revoke inside the window escalates
+required_gates:                             # the gate that applies at the class's ceiling
+  - {action_class: {domain: observe, reversibility: reversible, blast_radius: single}, gate: none}
+  - {action_class: {domain: enrich, reversibility: reversible, blast_radius: single}, gate: none}
+  - {action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single}, gate: on_the_loop}
+  - {action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}, gate: approval}
+  - {action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}, gate: on_the_loop}
+evals:
+  suite: evals/oauth_grant_review.yaml
+  min_precision: 0.90
+  max_false_negative_rate: 0.05
+  max_over_broad_rate: 0.01
+  adversarial_required: true
+metrics:
+  - {name: grants_reviewed_per_day, query: "ledger:runs where capability=oauth_grant_review", target: ">= 50", cadence: daily}
+  - {name: agreement_rate, query: "shadow:by_family capability=oauth_grant_review", target: ">= 0.90", cadence: weekly}
+  - {name: revoke_override_rate, query: "ledger:approvals tool=idp_revoke_oauth_grant", target: "<= 0.05", cadence: weekly}
+  - {name: false_revoke_count, query: "ledger:rollbacks tool=idp_revoke_oauth_grant", target: "0", cadence: weekly}
+budget:
+  max_steps: 30
+  max_wall_seconds: 600
+  max_tokens: 200000
+  max_cost_usd: 3.0
+  max_tool_calls: 40
+  per_tool_limits: {ti_lookup_indicator: 20}
+daily_budget_usd: 150
+knowledge:
+  collections: [runbooks/identity, standards/oauth-app-allowlist, prior_investigations/oauth]
+roe:
+  required: true
+  engagement_types: [standing_defensive]

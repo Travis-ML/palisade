@@ -1,0 +1,55 @@
+# palisade/capabilities/vuln_remediation/capability.yaml
+capability:
+  name: vuln_remediation
+  version: 1.0.0
+  plane: defensive
+  owner: appsec-lead@palisade.example
+  agents:
+    - {agent_id: spiffe://palisade.example/agent/vuln-scan,      role: finding and prioritization}
+    - {agent_id: spiffe://palisade.example/agent/vuln-remediate, role: remediation}
+  routing: {allowed_model_classes: [frontier_filtered, small_filtered], deny_less_restricted: true}
+
+tools:   # name, server, action class, which agent may call it
+  - {name: scanner_run,          server: palisade-scanners,   class: observe:reversible:single,              agents: [vuln-scan]}
+  - {name: scanner_get_findings, server: palisade-scanners,   class: observe:reversible:single,              agents: [vuln-scan]}
+  - {name: kev_lookup,           server: palisade-vuln-intel, class: enrich:reversible:single,               agents: [vuln-scan]}
+  - {name: epss_lookup,          server: palisade-vuln-intel, class: enrich:reversible:single,               agents: [vuln-scan]}
+  - {name: asset_get_context,    server: palisade-assets,     class: enrich:reversible:single,               agents: [vuln-scan, vuln-remediate]}
+  - {name: vuln_update_priority, server: palisade-vulnmgmt,   class: internal_change:reversible:single,      agents: [vuln-scan]}
+  - {name: scm_create_branch,    server: palisade-scm,        class: internal_change:semi_reversible:single, agents: [vuln-remediate]}
+  - {name: scm_commit_patch,     server: palisade-scm,        class: internal_change:semi_reversible:single, agents: [vuln-remediate]}
+  - {name: scm_run_ci,           server: palisade-scm,        class: observe:reversible:single,              agents: [vuln-remediate], sandbox: required}
+  - {name: scm_open_pr,          server: palisade-scm,        class: internal_change:semi_reversible:single, agents: [vuln-remediate]}
+
+skills: [skills/prioritize_findings.yaml, skills/remediate_finding.yaml]
+
+scope_ceiling:
+  - {action_class: observe:reversible:single,              max_tier: AUTONOMOUS}
+  - {action_class: enrich:reversible:single,               max_tier: AUTONOMOUS}
+  - {action_class: internal_change:reversible:single,      max_tier: AUTONOMOUS}         # bounded priority updates
+  - {action_class: internal_change:semi_reversible:single, max_tier: ACT_WITH_APPROVAL}  # human merge is the gate
+  - {action_class: production_control:irreversible:single, max_tier: SHADOW}             # not enabled
+
+required_gates:
+  - {action_class: internal_change:semi_reversible:single, gate: pr_review, approvers: codeowners+security_reviewer}
+  # Risk acceptance (deprioritize / accept) is not a tool call: it is a human decision recorded as an
+  # ApprovalRecord by the appsec lead, so it carries no action class and appears in the ledger, not here.
+  - {action_class: "production_control:*:*", gate: five_question}
+
+guardrails:
+  untrusted_fields: [Finding.summary, package_metadata, code_comments, cve_description]
+  output_schemas: [AgentRanking, UnifiedDiffOutput]
+  diff_path_denylist: [".github/**", ".gitlab-ci.yml", "ci/**"]
+  max_diff_lines: 400
+  max_iterations: 4
+
+evals:
+  suite: evals/suite.yaml
+  min_precision: 0.90                 # priority-band agreement with the labeled corpus
+  max_false_negative_rate: 0.05       # exploitable findings ranked below the band
+  max_over_broad_rate: 0.02           # fixes that regressed something
+  adversarial_required: true          # every seeded case must pass before promotion
+
+metrics:   # one entry per metric of Section 17.10
+  - {name: mttr_by_severity, query: metrics/mttr_by_severity.sql, cadence: weekly}
+  - {name: regression_rate,  query: metrics/regression.sql,       cadence: weekly}

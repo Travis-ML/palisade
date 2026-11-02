@@ -1,0 +1,26 @@
+# RoE excerpt: eng_2026q4_soc_response (Chapter 11 covers signing and the full schema)
+engagement_id: eng_2026q4_soc_response
+plane: defensive
+owner: ir-lead@palisade.example
+approvers: [ir-lead@palisade.example, soc-senior-oncall@palisade.example]
+stop_authorities: [ir-lead@palisade.example, ciso@palisade.example]
+scope:
+  in_scope: ["tenant:tenant-acme:*"]
+  out_of_scope:
+    - "tenant:tenant-acme:host:dc-*"            # domain controllers: human-led
+    - "tenant:tenant-acme:host:srv-*"           # servers: human-led
+    - "tenant:tenant-acme:group:executives:*"   # VIP accounts: human-led
+    - "tenant:tenant-acme:group:tier0-admins:*"
+ceilings:
+  - {action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}, max_tier: 4, rate_limit: "1/10m"}
+  - {action_class: {domain: production_control, reversibility: reversible, blast_radius: single}, max_tier: 4, rate_limit: "5/60m"}
+  - {action_class: {domain: production_control, reversibility: irreversible, blast_radius: single}, max_tier: 3}
+  - {action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: group}, max_tier: 3}
+  - {action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single}, max_tier: 4}
+  - {action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}, max_tier: 3, rate_limit: "3/60m"}
+  # no ceiling for any enterprise blast radius: default deny
+not_before: 2026-10-01T00:00:00Z
+not_after: 2026-12-31T23:59:59Z
+stop_conditions:
+  - "any self-inflicted outage attributed to this engagement"
+  - "override rate above 0.10 over any rolling 7 days"

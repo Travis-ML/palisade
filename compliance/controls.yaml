@@ -1,0 +1,110 @@
+# palisade/compliance/controls.yaml (excerpt; Appendix A holds all 24)
+version: "2026.10"
+frameworks:
+  nist_ai_rmf: "NIST AI RMF 1.0 / AI 600-1"
+  iso_42001: "ISO/IEC 42001:2023"
+  eu_ai_act: "EU AI Act (2024/1689)"
+  owasp_asi: "OWASP ASI Top 10 (2026)"
+  mitre_atlas: "MITRE ATLAS"
+  soc2: "SOC 2 TSC"
+  gdpr: "GDPR"
+  nis2: "NIS2 (2022/2555)"
+  nist_800_53: "NIST SP 800-53r5 (FedRAMP)"
+  nist_800_171: "NIST SP 800-171 (CMMC)"
+  hipaa: "HIPAA Security Rule"
+  pci_dss: "PCI DSS v4.0.1"
+
+controls:
+  - id: A1
+    name: Immutable, isolated accounting substrate
+    layer: observability
+    owner: platform team
+    chapter: 10
+    statement: >
+      Every governed step writes one DecisionRecord to an append-only, hash-chained ledger
+      isolated from the systems it monitors, with redaction at write.
+    acceptance_test: >
+      Pick any production decision at random; reconstruct context hash, reasoning, policy
+      path, approval, and outcome from the ledger alone. Ledger.verify_chain() returns true.
+    frameworks:
+      nist_ai_rmf: ["MEASURE 2.7", "MANAGE 4.1", "GOVERN 1.5"]
+      iso_42001: ["Annex A.6 (operation, monitoring, event logging)"]
+      eu_ai_act: ["Art. 12 record-keeping", "Art. 26(6) log retention"]
+      soc2: ["CC7.2", "CC7.3"]
+      gdpr: ["Art. 33(5) breach documentation"]
+      nis2: ["Art. 21(2)(b) incident handling", "Art. 23 reporting"]
+      nist_800_53: ["AU-2", "AU-3", "AU-9", "AU-10"]
+      nist_800_171: ["3.3.1", "3.3.8"]
+      hipaa: ["164.312(b) audit controls"]
+      pci_dss: ["10.2", "10.3"]
+    evidence:
+      - {source: ledger, query: q_chain_verify, what_it_shows: "chain intact for the audit period"}
+      - {source: ledger, query: q_replay_sample, what_it_shows: "N random decisions reconstructed end to end"}
+
+  - id: A2
+    name: Pre-action governance check at the gateway on every tool call
+    layer: governance
+    owner: platform team
+    chapter: 7
+    statement: Every proposed action is authorized by the policy engine before execution; no bypass path exists.
+    acceptance_test: >
+      No DecisionRecord has execution set and policy_decision null; a network-policy test shows
+      tool servers unreachable except via the gateway.
+    frameworks:
+      nist_ai_rmf: ["MANAGE 2.4", "MANAGE 1.3"]
+      owasp_asi: ["ASI02"]
+      eu_ai_act: ["Art. 14 human oversight"]
+      soc2: ["CC6.1", "CC6.3"]
+      nist_800_53: ["AC-3", "AC-6"]
+      nist_800_171: ["3.1.1", "3.1.5"]
+      pci_dss: ["7.2"]
+    evidence:
+      - {source: ledger, query: q_executed_without_policy, what_it_shows: "zero rows"}
+
+  - id: A7
+    name: Five-question intent gate for irreversible or high-blast-radius actions
+    layer: HITL
+    owner: capability owners
+    chapter: 13
+    statement: Irreversible or enterprise-wide actions carry a scored FiveQuestionIntent and a human approval with evidence attestation.
+    acceptance_test: Every executed irreversible action has approval.decision == approved and a presented_context_hash that re-renders.
+    frameworks:
+      nist_ai_rmf: ["GOVERN 3.2", "MANAGE 2.4"]
+      iso_42001: ["Annex A.9 (human oversight of AI use)"]
+      eu_ai_act: ["Art. 14 human oversight", "Art. 26(2)"]
+      owasp_asi: ["ASI09"]
+      soc2: ["CC6.1"]
+    evidence:
+      - {source: ledger, query: q_irreversible_approvals, what_it_shows: "approver, justification, what they saw"}
+
+  - id: A13
+    name: Fail-safe halt when governance is unavailable
+    layer: governance
+    owner: platform team
+    chapter: 14
+    statement: If the policy engine, ledger, broker, or kill switch is unreachable, the loop halts; it never proceeds ungoverned.
+    acceptance_test: Chaos test disables OPA mid-run; the run halts with engine.unavailable and no tool executes.
+    frameworks:
+      nist_ai_rmf: ["MANAGE 2.3", "MANAGE 2.4"]
+      eu_ai_act: ["Art. 15 robustness"]
+      owasp_asi: ["ASI08"]
+      nist_800_53: ["SC-24 fail in known state"]
+    evidence:
+      - {source: ledger, query: q_engine_unavailable_halts, what_it_shows: "halts recorded, zero executions after"}
+      - {source: ci, query: chaos_opa_down, what_it_shows: "quarterly fail-safe drill result"}
+
+  - id: A14
+    name: Global and scoped kill switch with credential revocation
+    layer: HITL
+    owner: platform team
+    chapter: 13
+    statement: Any stop authority can halt a scope; the switch revokes brokered credentials and records the intervention.
+    acceptance_test: Trip during an executing step in the range; no tool call completes after the trip timestamp.
+    frameworks:
+      nist_ai_rmf: ["MANAGE 2.4"]
+      eu_ai_act: ["Art. 14(4)(e) stop button"]
+      iso_42001: ["Annex A.6 (operation and monitoring)"]
+      nis2: ["Art. 21(2)(b) incident handling"]
+    evidence:
+      - {source: ledger, query: q_kill_events, what_it_shows: "who tripped what, when, why"}
+      - {source: broker, query: revocations_by_kill_id, what_it_shows: "grants revoked per kill"}

@@ -1,0 +1,7 @@
+index=wineventlog sourcetype="XmlWinEventLog:Microsoft-Windows-Sysmon/Operational" EventCode=1 earliest=-14d
+    (ParentImage="*\\svchost.exe" ParentCommandLine="*Schedule*") OR ParentImage="*\\taskeng.exe"
+    (Image="C:\\Users\\*" OR Image="C:\\ProgramData\\*" OR Image="C:\\Windows\\Temp\\*"
+     OR CommandLine="*-enc*" OR CommandLine="*-EncodedCommand*")
+| stats count min(_time) AS first_seen max(_time) AS last_seen values(CommandLine) AS cmd BY host, User, Image
+| where count < 50
+| sort first_seen

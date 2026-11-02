@@ -1,0 +1,98 @@
+# lab/docker-compose.yml
+# Pin every image in lab/.env (OPA_VERSION, OTEL_VERSION, JAEGER_VERSION, VLLM_VERSION).
+# Never use "latest" in a harness lab; you will not be able to reproduce a result.
+
+networks:
+  defensive_net:
+    driver: bridge
+  range_net:
+    driver: bridge
+    internal: true            # no gateway: nothing on this network can reach outside it
+
+volumes:
+  ledger_defensive: {}
+  ledger_range: {}
+  range_models: {}            # pre-verified weights are copied in; never downloaded from inside
+
+services:
+
+  # ---------------- Defensive plane ----------------
+
+  opa:
+    image: openpolicyagent/opa:${OPA_VERSION}
+    command: ["run", "--server", "--addr", ":8181", "--log-level", "info", "/policy"]
+    volumes:
+      - ./policy:/policy:ro
+    ports:
+      - "127.0.0.1:8181:8181"
+    networks: [defensive_net]
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:${OTEL_VERSION}
+    command: ["--config", "/etc/otel/collector.yaml"]
+    volumes:
+      - ./otel/collector.yaml:/etc/otel/collector.yaml:ro
+      - ledger_defensive:/var/lib/otel
+    ports:
+      - "127.0.0.1:4317:4317"   # OTLP gRPC
+      - "127.0.0.1:4318:4318"   # OTLP HTTP
+    networks: [defensive_net]
+
+  jaeger:                      # optional trace viewer; accepts OTLP directly
+    image: jaegertracing/all-in-one:${JAEGER_VERSION}
+    ports:
+      - "127.0.0.1:16686:16686"
+    networks: [defensive_net]
+    profiles: [viewer]
+
+  # ---------------- Offensive plane (the range) ----------------
+  # Every service below is attached ONLY to range_net.
+
+  opa-range:
+    image: openpolicyagent/opa:${OPA_VERSION}
+    command: ["run", "--server", "--addr", ":8181", "--log-level", "info", "/policy"]
+    volumes:
+      - ./policy:/policy:ro
+    networks: [range_net]
+    profiles: [range]
+
+  otel-collector-range:
+    image: otel/opentelemetry-collector-contrib:${OTEL_VERSION}
+    command: ["--config", "/etc/otel/collector-range.yaml"]
+    volumes:
+      - ./otel/collector-range.yaml:/etc/otel/collector-range.yaml:ro
+      - ledger_range:/var/lib/otel         # the only thing that leaves the range, by a brokered copy
+    networks: [range_net]
+    profiles: [range]
+
+  vllm:
+    image: vllm/vllm-openai:${VLLM_VERSION}
+    command: ["--model", "/models/${LAB_OPEN_WEIGHT_MODEL}", "--port", "8000",
+              "--served-model-name", "${LAB_OPEN_WEIGHT_MODEL}"]
+    environment:
+      HF_HUB_OFFLINE: "1"      # the range has no route out; weights must already be present
+    volumes:
+      - range_models:/models:ro
+    networks: [range_net]
+    profiles: [range, gpu]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+
+  palisade-range:
+    build:
+      context: ..
+      dockerfile: lab/Dockerfile.lab
+    environment:
+      PALISADE_PLANE: offensive
+      PALISADE_ENGAGEMENT: eng_2026q4_range_07
+      PALISADE_CONFIG: /app/lab/palisade-range.yaml
+    volumes:
+      - ..:/app:ro
+      - ledger_range:/app/ledger
+    networks: [range_net]
+    profiles: [range]

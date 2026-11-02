@@ -1,0 +1,42 @@
+# .github/workflows/palisade-repo-review.yml
+name: palisade-repo-review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read          # read the diff
+  pull-requests: write    # post review comments and set the check
+  id-token: write         # mint an OIDC token to exchange at the Palisade broker
+  # no 'contents: write', no 'actions: write': this workflow cannot push or merge
+
+concurrency:
+  group: palisade-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    runs-on: [self-hosted, palisade-sandbox]   # hypervisor-isolated, default-deny egress
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4             # pin to a commit SHA in production
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Exchange OIDC token for a scoped grant
+        run: |
+          palisade-cli grant \
+            --engagement eng_2026q4_repo_review \
+            --agent spiffe://palisade.example/agent/repo-review \
+            --resource "repo:${GITHUB_REPOSITORY}#pr/${{ github.event.pull_request.number }}" \
+            --permissions read,comment --ttl 15m --oidc-from-env
+
+      - name: Run governed review
+        run: |
+          palisade-cli capability run repo_review \
+            --mode pr \
+            --base "${{ github.event.pull_request.base.sha }}" \
+            --head "${{ github.event.pull_request.head.sha }}" \
+            --pr "${{ github.event.pull_request.number }}"
+        # Exit code is set by the harness from blocking findings only.

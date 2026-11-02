@@ -1,0 +1,9 @@
+PalisadeLedger_CL
+| where TimeGenerated > ago(1h)
+| where palisade_policy_verdict_s == "deny"
+| summarize denials = count(),
+            rules = make_set(palisade_policy_rule_id_s),
+            targets = make_set(palisade_action_target_ids_s)
+          by palisade_agent_id_s, palisade_run_id_s, bin(TimeGenerated, 10m)
+| where denials >= 5
+| order by denials desc

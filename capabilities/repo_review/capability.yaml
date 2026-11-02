@@ -1,0 +1,58 @@
+# palisade/capabilities/repo_review/capability.yaml
+capability:
+  name: repo_review
+  version: 1.0.0
+  plane: defensive
+  owner: appsec-lead@palisade.example
+  agents:
+    - {agent_id: spiffe://palisade.example/agent/repo-review, role: review and suggest}
+  routing:
+    allowed_model_classes: [frontier_filtered_in_region, self_hosted_filtered]
+    data_handling: proprietary_source
+    deny_less_restricted: true
+
+tools:
+  - {name: repo_diff,       server: palisade-repo-review, class: observe:reversible:single}
+  - {name: repo_read_file,  server: palisade-repo-review, class: observe:reversible:single}
+  - {name: sast_run,        server: palisade-repo-review, class: observe:reversible:single, sandbox: required}
+  - {name: secrets_scan,    server: palisade-repo-review, class: observe:reversible:single}
+  - {name: scm_comment_pr,  server: palisade-repo-review, class: internal_change:reversible:single}
+  - {name: scm_open_pr,     server: palisade-scm,         class: internal_change:semi_reversible:single}
+
+skills:
+  - skills/review_secrets.yaml
+  - skills/review_python_web.yaml
+  - skills/review_go_service.yaml
+  - skills/review_iac.yaml
+  - skills/review_ai_agent_code.yaml
+
+knowledge:
+  - {path: knowledge/standards/golden_principles.yaml, trust_tier: enterprise, retrieval: by_applies_to}
+
+scope_ceiling:
+  - {action_class: observe:reversible:single,              max_tier: AUTONOMOUS}
+  - {action_class: internal_change:reversible:single,      max_tier: AUTONOMOUS}   # comments, check status
+  - {action_class: internal_change:semi_reversible:single, max_tier: DRAFT}        # fix branches, suggestions
+
+required_gates:
+  - {action: dismiss_blocking_finding, gate: human_disposition_with_justification, approvers: security_codeowners}
+  - {action: standards_change, gate: pr_review, approvers: appsec-standards}
+  - {action: accept_risk, gate: human_approval_record, approvers: appsec-lead}
+
+guardrails:
+  untrusted_fields: [file_content, diff_hunks, comments, docstrings, commit_messages]
+  output_schemas: [ReviewFinding, UnifiedDiffOutput]
+  latency_budget_seconds: 300
+  max_blocking_findings_per_pr: 5
+  blocking_precision_floor: 0.85
+  egress_allowlist: [gateway.palisade.example, models.palisade.example]
+
+evals:
+  suite: evals/suite.yaml       # labeled PRs per skill; seeded with instruction-bearing comments
+  promotion_gate: {min_precision_blocking: 0.85, min_recall_seeded_secrets: 1.00, adversarial_seed_pass_rate: 1.00}
+
+metrics:
+  - {name: findings_per_kloc,    query: metrics/findings_per_kloc.sql,  cadence: weekly}
+  - {name: time_to_fix,          query: metrics/time_to_fix.sql,        cadence: weekly}
+  - {name: recurrence,           query: metrics/recurrence.sql,         cadence: monthly}
+  - {name: secrets_pre_merge,    query: metrics/secrets_pre_merge.sql,  cadence: weekly}

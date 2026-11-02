@@ -1,0 +1,10 @@
+{"step": 3, "agent_id": "spiffe://palisade.example/agent/response-executor", "autonomy_tier": 4,
+ "proposed_action": {"tool_name": "idp_revoke_sessions", "arguments": {"user_id": "u.ramirez", "reason": "vrd_8b6dff71ec0b"},
+                     "action_class": {"domain": "production_control", "reversibility": "semi_reversible", "blast_radius": "single"},
+                     "target_ids": ["tenant:tenant-acme:user:u.ramirez"]},
+ "policy_decision": {"verdict": "allow", "rule_id": "allow.within_ceiling", "required_tier": 4, "effective_tier": 4,
+                     "reasons": ["class ceiling 4 >= required 4", "target in scope", "rate 1/10m ok"]},
+ "approval": null,
+ "execution": {"status": "ok", "duration_ms": 412, "credential_grant_id": "grant_5d2e8c1a0f93",
+               "result_summary": "7 sessions revoked; reversal: none required", "result_hash": "c71d...5e0b"},
+ "prev_hash": "9f2c...c1f", "record_hash": "e04a...77b3"}

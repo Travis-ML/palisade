@@ -1,0 +1,119 @@
+title: Palisade - Production control execution
+id: 7c1e4b3a-5d2f-4a8e-9b6c-0f1d2e3a4b5c
+name: palisade_production_control_executed
+status: experimental
+description: Base rule. One executed production_control action by a harness agent. Used by the correlations below.
+author: Palisade platform team
+date: 2026-10-05
+logsource:
+  product: palisade
+  service: ledger
+detection:
+  selection:
+    palisade.action.domain: production_control
+    palisade.execution.status: ok
+  condition: selection
+level: informational
+tags:
+  - palisade.detection-surface
+---
+title: Palisade - Abnormal production control rate per agent
+id: 2a9f0c7d-1b3e-4f5a-8c6d-7e8f9a0b1c2d
+status: experimental
+description: Three or more executed production_control actions by one agent identity inside ten minutes. The RoE rate limit should have escalated the second one; if this fires, either the limit is misconfigured or something is bypassing the gateway.
+correlation:
+  type: event_count
+  rules:
+    - palisade_production_control_executed
+  group-by:
+    - palisade.agent_id
+  timespan: 10m
+  condition:
+    gte: 3
+level: high
+---
+title: Palisade - Scope denial
+id: 9d8c7b6a-5f4e-4d3c-8b2a-1f0e9d8c7b6a
+name: palisade_scope_denied
+status: experimental
+description: Base rule. The policy engine denied an action for scope or ceiling reasons.
+logsource:
+  product: palisade
+  service: ledger
+detection:
+  selection:
+    palisade.policy.verdict: deny
+    palisade.policy.rule_id|startswith:
+      - 'roe.scope.'
+      - 'roe.ceiling.'
+  condition: selection
+level: informational
+---
+title: Palisade - Scope escalation sequence
+id: 4e3d2c1b-0a9f-4e8d-9c7b-6a5f4e3d2c1b
+status: experimental
+description: A scope or ceiling denial followed within five minutes by an executed production_control action from the same agent. The pattern of a hijacked or probing agent that was told no and found another way to touch production.
+correlation:
+  type: temporal_ordered
+  rules:
+    - palisade_scope_denied
+    - palisade_production_control_executed
+  group-by:
+    - palisade.agent_id
+  timespan: 5m
+level: critical
+---
+title: Palisade - Off-hours production control without approval
+id: 6f5e4d3c-2b1a-4f0e-8d9c-7b6a5f4e3d2c
+status: experimental
+description: Production control executed between 22:00 and 05:00 UTC with no approval record. Legitimate autonomous actions in this window exist; the baseline for each tenant decides whether this is informational or paged.
+logsource:
+  product: palisade
+  service: ledger
+detection:
+  selection:
+    palisade.action.domain: production_control
+    palisade.execution.status: ok
+    palisade.approval.decision: null
+  late:
+    palisade.hour_utc|gte: 22
+  early:
+    palisade.hour_utc|lte: 5
+  condition: selection and (late or early)
+falsepositives:
+  - Pre-approved reversible actions under an RoE that permits 24x7 operation
+level: medium
+---
+title: Palisade - Injection signature in tool arguments
+id: 8b7a6f5e-4d3c-4b2a-9f8e-7d6c5b4a3f2e
+status: experimental
+description: A proposed action's arguments contain phrasing associated with instruction injection. The agent was likely fed hostile content and is now carrying it into a tool call.
+logsource:
+  product: palisade
+  service: ledger
+detection:
+  selection:
+    palisade.action.arguments|contains:
+      - 'ignore all previous instructions'
+      - 'disregard the above'
+      - 'you are now'
+      - 'system prompt'
+      - 'developer message'
+  condition: selection
+level: high
+---
+title: Palisade - Cross-tenant access inside one run
+id: 1c2d3e4f-5a6b-4c7d-8e9f-0a1b2c3d4e5f
+status: experimental
+description: One run touched two or more tenants. Triage and response runs are tenant-bound by RoE; this should be impossible and indicates a scope bypass or a poisoned context.
+correlation:
+  type: value_count
+  rules:
+    - palisade_any_action
+  group-by:
+    - palisade.run_id
+  timespan: 1h
+  condition:
+    field: palisade.tenants
+    gte: 2
+level: critical

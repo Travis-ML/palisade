@@ -1,0 +1,10 @@
+{"step": 11, "agent_id": "spiffe://palisade.example/agent/response-executor", "autonomy_tier": 4,
+ "proposed_action": {"tool_name": "idp_reset_credential", "arguments": {"user_id": "u.ramirez", "intent": {"intent": "...", "necessity": "...", "harm": "...", "data": "...", "alternatives": "..."}},
+                     "action_class": {"domain": "production_control", "reversibility": "irreversible", "blast_radius": "single"}},
+ "policy_decision": {"verdict": "escalate", "rule_id": "ceiling.approval_required", "required_tier": 3, "effective_tier": 3},
+ "approval": {"approver_id": "ir-lead@palisade.example", "decision": "approved", "presented_context_hash": "7a3f...d9e1",
+              "justification": "Evidence reviewed; three independent indicators; reversible steps already executed.",
+              "decided_at": "2026-10-14T13:51:40Z"},
+ "execution": {"status": "ok", "duration_ms": 1890, "credential_grant_id": "grant_a81c4e7f2b06",
+               "result_summary": "credential reset; user must re-enroll via help desk", "result_hash": "48c0...b1aa"},
+ "prev_hash": "d2e7...08cf", "record_hash": "5f61...9ac4"}

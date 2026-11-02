@@ -1,0 +1,17 @@
+# /srv/models/analyst-8b/provenance.yaml
+model_name: analyst-8b
+source: hf://example-org/analyst-8b
+revision: 3f9c2a1e7b0d4c6a9f2e1b8d7c5a4f3e2d1c0b9a      # upstream commit the files came from
+format: safetensors
+precision: bf16
+quantized_by: null                                       # or "self:llm-compressor@0.6.0" or a third party
+files:
+  - {path: config.json, sha256: "9b3c...", bytes: 713}
+  - {path: tokenizer.json, sha256: "41aa...", bytes: 17209920}
+  - {path: model-00001-of-00002.safetensors, sha256: "e0f1...", bytes: 4976698672}
+  - {path: model-00002-of-00002.safetensors, sha256: "77d2...", bytes: 1168138808}
+  - {path: model.safetensors.index.json, sha256: "2d9a...", bytes: 23950}
+obtained_at: 2026-09-18T14:02:11Z
+verified_by: u.ramirez
+signature: "<ed25519 over the canonical body>"
+signer_key_id: palisade-model-signing-2026

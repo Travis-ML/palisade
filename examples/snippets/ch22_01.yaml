@@ -1,0 +1,21 @@
+# RoE excerpt: eng_2026q4_phishing
+engagement_id: eng_2026q4_phishing
+plane: defensive
+owner: soc-lead@palisade.example
+approvers: [soc-senior-oncall@palisade.example, it-comms-lead@palisade.example]   # comms approves large notifications
+scope:
+  in_scope: ["tenant:tenant-acme:mailbox:*", "tenant:tenant-acme:domain:palisade.example", "tenant:tenant-acme:user:*"]
+  out_of_scope: ["tenant:tenant-acme:mailbox:legal-hold-*", "tenant:tenant-acme:group:executives:*"]
+ceilings:
+  - {action_class: {domain: observe, reversibility: reversible, blast_radius: single}, max_tier: 5}
+  - {action_class: {domain: observe, reversibility: reversible, blast_radius: group}, max_tier: 5, rate_limit: "24/5m"}
+  - {action_class: {domain: enrich, reversibility: reversible, blast_radius: single}, max_tier: 5, rate_limit: "40/60m"}   # sandbox_detonate
+  - {action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}, max_tier: 4, rate_limit: "60/60m"}
+  - {action_class: {domain: production_control, reversibility: reversible, blast_radius: single}, max_tier: 4, rate_limit: "10/60m"}
+  - {action_class: {domain: production_control, reversibility: irreversible, blast_radius: single}, max_tier: 4}   # pre-approved only with confirmed_compromise evidence
+  - {action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: group}, max_tier: 3}
+  - {action_class: {domain: production_control, reversibility: irreversible, blast_radius: group}, max_tier: 3}
+  - {action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}, max_tier: 3, rate_limit: "25/10m"}  # notify_user: approval
+not_before: 2026-10-01T00:00:00Z
+not_after: 2026-12-31T23:59:59Z
+stop_conditions: ["false-quarantine rate above 0.02 over any rolling 7 days", "any mail outage attributed to this engagement"]

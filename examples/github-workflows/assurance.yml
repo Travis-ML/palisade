@@ -1,0 +1,27 @@
+# .github/workflows/assurance.yml (sketch)
+name: assurance
+on: [pull_request, schedule]
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -e .[dev] && ruff check . && mypy palisade
+      - run: curl -L -o opa https://openpolicyagent.org/downloads/latest/opa_linux_amd64_static && chmod +x opa
+      - run: ./opa fmt --diff palisade/policy/rego && ./opa check --strict palisade/policy/rego
+      - run: python -m palisade.identity.secret_scan prompts/
+  unit:
+    needs: static
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install -e .[dev] && pytest -q
+      - run: ./opa test palisade/policy/rego -v
+  evals:
+    needs: unit
+    runs-on: [self-hosted, range]          # the range runner has no path to production
+    steps:
+      - uses: actions/checkout@v4
+      - run: python -m palisade.evals.cli run --suite palisade/capabilities/alert_triage/evals/triage_v3.yaml --out report.json --max-cost-usd 40
+      - run: python -m palisade.evals.cli gate --report report.json --baseline $(python -m palisade.evals.cli baseline alert_triage)
+      - run: python -m palisade.evals.cli publish --report report.json

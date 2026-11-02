@@ -1,0 +1,6 @@
+// SIEM side: scope-escalation sequence in the harness's own telemetry (Sentinel)
+PalisadeDecisionRecords
+| where TimeGenerated > ago(30m) and verdict == "deny" and rule_id in ("roe.scope.not_in_scope", "roe.scope.explicit_deny", "ceiling.tier_too_low")
+| summarize denials = count(), targets = dcount(tostring(target_ids)), rules = make_set(rule_id) by agent_id, run_id, bin(TimeGenerated, 10m)
+| where denials >= 4 and targets >= 3
+| project TimeGenerated, agent_id, run_id, denials, targets, rules

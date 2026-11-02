@@ -1,0 +1,23 @@
+# knowledge/detections/attack_coverage.yaml  (excerpt; version 2026.10.03)
+version: "2026.10.03"
+framework: "MITRE ATT&CK Enterprise"   # release pinned by detection CI; bump deliberately
+techniques:
+  - id: T1053.005
+    name: "Scheduled Task/Job: Scheduled Task"
+    tactic: [persistence, execution, privilege-escalation]
+    data_sources: {collected: [windows-security-4698, sysmon-1], missing: [windows-security-4702]}
+    detections: [{rule: "win_task_creation_suspicious_user", confidence: low, last_fired: 2026-06-14}]
+    coverage: partial
+    asset_tiers_exposed: [tier0, tier1]
+    last_hunted: 2026-04-02
+  - id: T1021.001
+    name: "Remote Services: Remote Desktop Protocol"
+    data_sources: {collected: [windows-security-4624, firewall], missing: []}
+    detections: [{rule: "rdp_from_non_jump_host", confidence: high, last_fired: 2026-09-28}]
+    coverage: full
+  - id: T1562.001
+    name: "Impair Defenses: Disable or Modify Tools"
+    data_sources: {collected: [sysmon-1, edr-telemetry], missing: [windows-security-4719]}
+    detections: []
+    coverage: none
+    asset_tiers_exposed: [tier0, tier1, tier2]

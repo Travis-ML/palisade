@@ -1,0 +1,19 @@
+# palisade/capabilities/vuln_remediation/roe/eng_2026q4_vuln.yaml (excerpt)
+engagement_id: eng_2026q4_vuln_remediation
+plane: defensive
+owner: appsec-lead@palisade.example
+approvers: [appsec-lead@palisade.example, platform-oncall@palisade.example]
+stop_authorities: [appsec-lead@palisade.example, ciso@palisade.example]
+scope:
+  in_scope: ["repo:github.com/palisade-example/*", "cloud:aws:account:111122223333"]
+  out_of_scope: ["repo:github.com/palisade-example/vendor-*",
+                 "repo:github.com/palisade-example/fedramp-boundary"]
+ceilings:
+  - {action_class: {domain: observe, reversibility: reversible, blast_radius: single}, max_tier: 5}
+  - {action_class: {domain: enrich, reversibility: reversible, blast_radius: single}, max_tier: 5}
+  - {action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single},
+     max_tier: 3, rate_limit: "20/1h"}
+  - {action_class: {domain: production_control, reversibility: irreversible, blast_radius: single},
+     max_tier: 0}
+not_before: 2026-10-01T00:00:00Z
+not_after: 2026-12-31T23:59:59Z

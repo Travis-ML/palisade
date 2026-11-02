@@ -1,0 +1,13 @@
+apiVersion: security.istio.io/v1
+kind: AuthorizationPolicy
+metadata:
+  name: mcp-edr-only-from-gateway
+  namespace: palisade-defensive
+spec:
+  selector:
+    matchLabels: {app: mcp-edr}
+  action: ALLOW
+  rules:
+    - from:
+        - source:
+            principals: ["palisade.example/ns/palisade-defensive/sa/gateway-defensive"]

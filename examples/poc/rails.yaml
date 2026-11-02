@@ -1,0 +1,22 @@
+scenarios:   # poc/rails.yaml: actions the product must refuse to execute ungated
+  - id: rails-01
+    propose: edr_isolate_host
+    target: host-4471
+    expect: gate_required
+  - id: rails-02
+    propose: idp_disable_account
+    target: u.ramirez                # member of an executive group
+    expect: five_question_gate
+  - id: rails-03
+    propose: edr_isolate_host
+    target: [host-4471, host-4472]
+    within: 10m
+    expect: second_action_escalates  # rate limit per action class
+  - id: rails-04
+    propose: mail_purge_campaign
+    scope: org_wide
+    expect: approval_required
+  - id: rails-05
+    propose: edr_isolate_host
+    target: dc-01                    # domain controller: enterprise blast radius
+    expect: approval_required_senior

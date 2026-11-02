@@ -1,0 +1,56 @@
+# palisade/capabilities/threat_hunting/capability.yaml
+capability:
+  name: threat_hunting
+  version: 1.0.0
+  plane: defensive
+  owner: detection-eng-lead@palisade.example
+  agents:
+    - {agent_id: spiffe://palisade.example/agent/hunter, role: exploration and detection drafting}
+  routing: {allowed_model_classes: [frontier_filtered, self_hosted_filtered], deny_less_restricted: true}
+
+tools:
+  - {name: siem_estimate_cost,   server: palisade-siem,       class: observe:reversible:single}
+  - {name: siem_query,           server: palisade-siem,       class: observe:reversible:single, budgeted: true}
+  - {name: ti_lookup_indicator,  server: palisade-intel,      class: enrich:reversible:single}
+  - {name: asset_get_context,    server: palisade-assets,     class: enrich:reversible:single}
+  - {name: attack_coverage_get,  server: palisade-knowledge,  class: observe:reversible:single}
+  - {name: detection_test,       server: palisade-detections, class: observe:reversible:single, sandbox: required}
+  - {name: scm_open_pr,          server: palisade-scm,        class: internal_change:semi_reversible:single}
+
+skills: [skills/hunt_hypothesis.yaml, skills/author_detection.yaml]
+
+knowledge:
+  - {path: knowledge/detections/attack_coverage.yaml, trust_tier: enterprise}
+  - {path: knowledge/detections/labeled_corpus/,      trust_tier: enterprise}
+  - {path: knowledge/intel/,                          trust_tier: verified}
+
+budgets:
+  run: {max_steps: 40, max_tool_calls: 30, max_cost_usd: 15.0, per_tool_limits: {siem_query: 20}}
+  query_cost: {max_cost_per_query: 5.0, max_cost_per_run: 40.0, max_cost_per_hunt: 150.0,
+               max_lookback_days: 30, require_scope: true}
+
+scope_ceiling:
+  - {action_class: observe:reversible:single,              max_tier: AUTONOMOUS}
+  - {action_class: enrich:reversible:single,               max_tier: AUTONOMOUS}
+  - {action_class: internal_change:semi_reversible:single, max_tier: ACT_WITH_APPROVAL}   # detection PRs
+  # no production_control row: default deny
+
+required_gates:
+  - {action: hunt_conclusion,  gate: human_validation, approvers: threat-hunters}
+  - {action_class: internal_change:semi_reversible:single, gate: pr_review, approvers: detection-eng}
+
+guardrails:
+  untrusted_fields: [siem_query.rows, ti_lookup_indicator.raw, log_fields]
+  output_schemas: [HuntHypothesis, GlassBoxVerdict, SigmaRule]
+  evidence_citation_required: true           # every claim cites a result_hash in this run
+  seed_citation_required: true               # every hypothesis cites a coverage entry or report
+  detection_thresholds: {precision: 0.80, recall: 0.90, max_match_rate: 0.001}
+
+evals:
+  suite: evals/suite.yaml       # replayed hunts with known outcomes; seeded telemetry with instructions
+  promotion_gate: {min_lead_agreement: 0.85, max_detection_fp_rate_30d: 0.20, adversarial_seed_pass_rate: 1.00}
+
+metrics:
+  - {name: hunt_outcomes_and_cycle, query: metrics/hunt_outcomes.sql,  cadence: monthly}
+  - {name: detection_fp_rate_30d,   query: metrics/detection_fp.sql,   cadence: weekly}
+  - {name: attack_coverage_delta,   query: metrics/coverage_delta.sql, cadence: monthly}

@@ -1,0 +1,104 @@
+{
+  "palisade": {
+    "taxonomy": {
+      "enrich:reversible:single": {
+        "required_tier": 0,
+        "approval_always": false
+      },
+      "internal_change:irreversible:single": {
+        "required_tier": 5,
+        "approval_always": false
+      },
+      "internal_change:semi_reversible:single": {
+        "required_tier": 2,
+        "approval_always": false
+      },
+      "observe:reversible:group": {
+        "required_tier": 0,
+        "approval_always": false
+      },
+      "observe:reversible:single": {
+        "required_tier": 0,
+        "approval_always": false
+      },
+      "offense:irreversible:group": {
+        "required_tier": 4,
+        "approval_always": false
+      },
+      "production_control:reversible:single": {
+        "required_tier": 4,
+        "approval_always": false
+      },
+      "production_control:semi_reversible:group": {
+        "required_tier": 5,
+        "approval_always": false
+      },
+      "production_control:semi_reversible:single": {
+        "required_tier": 4,
+        "approval_always": false
+      }
+    },
+    "tools": {
+      "edr_get_host": {
+        "plane": "defensive",
+        "requires_targets": false
+      },
+      "edr_isolate_host": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "edr_release_host": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "idp_disable_account": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "idp_revoke_sessions": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "mail_purge_campaign": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "mail_quarantine_message": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "notify_user": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "range_emulate_step": {
+        "plane": "offensive",
+        "requires_targets": true
+      },
+      "sandbox_detonate": {
+        "plane": "defensive",
+        "requires_targets": false
+      },
+      "scanner_run": {
+        "plane": "defensive",
+        "requires_targets": false
+      },
+      "scm_open_pr": {
+        "plane": "defensive",
+        "requires_targets": true
+      },
+      "siem_query": {
+        "plane": "defensive",
+        "requires_targets": false
+      },
+      "ti_lookup_indicator": {
+        "plane": "defensive",
+        "requires_targets": false
+      },
+      "ticket_create": {
+        "plane": "defensive",
+        "requires_targets": true
+      }
+    }
+  }
+}

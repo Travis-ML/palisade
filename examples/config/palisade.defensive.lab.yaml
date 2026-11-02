@@ -1,0 +1,20 @@
+# config/palisade.defensive.yaml (lab example; no secrets in this file)
+plane: defensive
+agent:
+  agent_id: spiffe://palisade.example/agent/triage
+  display_name: SOC triage agent
+  owner: soc-lead@palisade.example
+models:
+  frontier: ${MODEL_FRONTIER}        # resolved by your deployment tooling, never hard-coded
+  fast: ${MODEL_FAST}
+endpoints:
+  opa_url: http://opa:8181
+  ledger_url: http://otel-collector:4318
+  broker_url: http://broker:8443
+  killswitch_url: http://killswitch:8080
+  otel_endpoint: http://otel-collector:4318
+  mcp_servers:
+    siem_query: http://mcp-siem:8000
+    edr_get_host: http://mcp-edr:8000
+    ti_lookup_indicator: http://mcp-ti:8000
+    ticket_create: http://mcp-ticket:8000

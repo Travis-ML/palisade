@@ -1,0 +1,19 @@
+# RoE excerpt for the triage engagement (Chapter 11 covers the full schema and signing)
+engagement_id: eng_2026q4_soc_triage
+plane: defensive
+owner: soc-lead@palisade.example
+approvers: [soc-senior-oncall@palisade.example]
+stop_authorities: [soc-lead@palisade.example, ciso@palisade.example]
+scope:
+  in_scope: ["tenant:tenant-acme:*"]
+  out_of_scope: ["tenant:tenant-acme:host:dc-*", "tenant:tenant-acme:user:svc-break-glass"]
+ceilings:
+  - {action_class: {domain: observe, reversibility: reversible, blast_radius: single}, max_tier: 5}
+  - {action_class: {domain: observe, reversibility: reversible, blast_radius: group}, max_tier: 5, rate_limit: "40/10m"}
+  - {action_class: {domain: enrich, reversibility: reversible, blast_radius: single}, max_tier: 5}
+  - {action_class: {domain: internal_change, reversibility: irreversible, blast_radius: single}, max_tier: 4, rate_limit: "1/60m"}
+not_before: 2026-10-01T00:00:00Z
+not_after: 2026-12-31T23:59:59Z
+stop_conditions:
+  - "agreement rate below 0.85 over any rolling 7 days"
+  - "any execution record from the triage identity against a production_control tool"

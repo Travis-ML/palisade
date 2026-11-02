@@ -1,0 +1,17 @@
+// Scheduled tasks created in the last 14 days whose action runs from a
+// user-writable path or launches encoded PowerShell. Excludes vendor paths.
+let lookback = 14d;
+let benign_prefixes = dynamic(["\\Microsoft\\Windows\\", "\\PalisadeDeploy\\"]);
+SecurityEvent
+| where TimeGenerated > ago(lookback)
+| where EventID == 4698
+| where not(TaskName has_any (benign_prefixes))
+| extend TaskXml = parse_xml(TaskContent)
+| extend Command   = tostring(TaskXml.Task.Actions.Exec.Command),
+         Arguments = tostring(TaskXml.Task.Actions.Exec.Arguments)
+| where Command matches regex @"(?i)^C:\\(Users|ProgramData|Windows\\Temp)\\"
+     or Arguments has_any ("-enc", "-EncodedCommand", "FromBase64String")
+| summarize Creations = count(), FirstSeen = min(TimeGenerated), LastSeen = max(TimeGenerated),
+            Hosts = make_set(Computer, 20)
+    by SubjectUserName, TaskName, Command, Arguments
+| order by Creations asc

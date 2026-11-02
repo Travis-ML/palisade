@@ -1,0 +1,234 @@
+# palisade/controls.yaml
+# Appendix A control catalog. Read by the Chapter 16 framework mapper and the
+# Chapter 28 capability loader. Prose in Appendix A is authoritative for
+# statement and acceptance test.
+version: "1.0"
+owners:
+  platform: "Harness platform team"
+  capability: "Capability owners"
+  risk_gov: "Governance and risk function"
+  iam: "Identity and access management"
+  redteam: "Offensive-plane / red-team owner"
+  authority: "Named human authority (per engagement)"
+
+controls:
+  - id: A1
+    name: "Immutable, isolated accounting substrate (OTel GenAI traces + decision records + glass-box verdicts)"
+    layer: observability
+    owner: platform
+    chapters: [10, 9, 27]
+    palisade: ["ledger/ledger.py", "ledger/otel.py"]
+    frameworks: ["SOC 2 CC7.2", "GDPR Art. 33", "NIS2 Art. 21", "EU AI Act record-keeping", "ISO/IEC 42001", "NIST AI RMF Measure/Manage"]
+    closes: ["ASI10", "ASI08"]
+
+  - id: A2
+    name: "Pre-action governance check at the MCP gateway on every tool call"
+    layer: governance
+    owner: platform
+    chapters: [7, 14, 5]
+    palisade: ["gateway.py", "policy/engine.py", "loop.py"]
+    frameworks: ["OWASP ASI02", "NIST AI RMF Manage", "SOC 2 CC6.1"]
+    closes: ["ASI02", "ASI01", "ASI03"]
+
+  - id: A3
+    name: "Rules of Engagement as enforced, signed, time-boxed policy"
+    layer: governance
+    owner: risk_gov
+    responsible: authority
+    chapters: [11]
+    palisade: ["roe.py"]
+    frameworks: ["ISO/IEC 42001", "NIST AI RMF Govern", "EU AI Act human oversight"]
+    closes: ["ASI01", "ASI03", "ASI10"]
+
+  - id: A4
+    name: "Action taxonomy → gate & autonomy-ceiling mapping"
+    layer: governance
+    owner: risk_gov
+    chapters: [11, 13, 26]
+    palisade: ["core/types.py", "policy/rego/"]
+    frameworks: ["NIST AI RMF Map/Manage", "EU AI Act human oversight"]
+    closes: ["ASI02", "ASI08"]
+
+  - id: A5
+    name: "Distinct governed agent identity (NHI) + lifecycle + recert + deprovision"
+    layer: identity
+    owner: iam
+    chapters: [12]
+    palisade: ["identity/broker.py"]
+    frameworks: ["OWASP ASI03", "ISO/IEC 42001", "SOC 2 CC6.1-CC6.3"]
+    closes: ["ASI03", "ASI10"]
+
+  - id: A6
+    name: "JIT, scoped, short-lived credentials via secrets broker; no standing privilege"
+    layer: identity
+    owner: iam
+    chapters: [12]
+    palisade: ["identity/broker.py"]
+    frameworks: ["OWASP ASI03", "SOC 2 CC6.1/CC6.6", "NIST SP 800-207"]
+    closes: ["ASI03", "ASI10"]
+
+  - id: A7
+    name: "Five-question intent gate for irreversible/high-blast-radius actions"
+    layer: hitl
+    owner: capability
+    accountable: authority
+    chapters: [13]
+    palisade: ["hitl/gate.py"]
+    frameworks: ["EU AI Act human oversight", "NIST AI RMF Manage", "SOC 2 CC7.x"]
+    closes: ["ASI09", "ASI02"]
+
+  - id: A8
+    name: "Rate/scale limits + circuit breakers + reversibility-first execution"
+    layer: governance
+    owner: platform
+    chapters: [11, 5, 21]
+    palisade: ["loop.py", "gateway.py", "policy/rego/"]
+    frameworks: ["OWASP ASI08", "NIST AI RMF Manage"]
+    closes: ["ASI08", "ASI01", "ASI10"]
+
+  - id: A9
+    name: "Input/injection guardrails; trust-tiered context; untrusted-data spotlighting"
+    layer: guardrail
+    owner: platform
+    chapters: [14, 8, 3]
+    palisade: ["guardrails/input.py", "context/retriever.py"]
+    frameworks: ["OWASP ASI01/ASI06", "MITRE ATLAS AML.T0051"]
+    closes: ["ASI01", "ASI06", "AML.T0051", "AML.T0054"]
+
+  - id: A10
+    name: "Sandboxed execution (hypervisor-enforced); default-deny fs/network; quotas"
+    layer: tool
+    owner: platform
+    chapters: [7]
+    palisade: ["tools/"]
+    frameworks: ["OWASP ASI05/ASI02"]
+    closes: ["ASI05", "ASI02"]
+
+  - id: A11
+    name: "MCP controls: tool-level scope, signed/hashed tool descriptions, curated registry, version pinning, SBOM"
+    layer: tool
+    owner: platform
+    chapters: [7]
+    palisade: ["tools/", "gateway.py"]
+    frameworks: ["OWASP ASI04", "SOC 2 CC8.1", "SBOM/SLSA practice"]
+    closes: ["ASI04", "ASI02", "AML.T0053"]
+
+  - id: A12
+    name: "Policy-as-code engine, default-deny, versioned & PR-reviewed"
+    layer: governance
+    owner: platform
+    accountable: risk_gov
+    chapters: [14]
+    palisade: ["policy/engine.py", "policy/rego/"]
+    frameworks: ["ISO/IEC 42001", "NIST AI RMF Govern", "SOC 2 CC8.1"]
+    closes: ["ASI03", "ASI02"]
+
+  - id: A13
+    name: "Fail-safe: agent halts if governance/substrate/identity/guardrails unavailable"
+    layer: governance
+    owner: platform
+    chapters: [14, 5, 24]
+    palisade: ["policy/engine.py", "loop.py"]
+    frameworks: ["NIST AI RMF Manage", "fail-closed safety"]
+    closes: ["ASI08", "ASI10"]
+
+  - id: A14
+    name: "Global + scoped kill switch with credential revocation"
+    layer: hitl
+    owner: platform
+    operated_by: authority
+    chapters: [13]
+    palisade: ["hitl/killswitch.py", "identity/broker.py"]
+    frameworks: ["EU AI Act human oversight", "NIST AI RMF Manage"]
+    closes: ["ASI10", "ASI08"]
+
+  - id: A15
+    name: "Eval gates (incl. adversarial set) on every version promotion"
+    layer: assurance
+    owner: capability
+    chapters: [15]
+    palisade: ["evals/runner.py", "capabilities/<name>/evals/"]
+    frameworks: ["NIST AI RMF Measure", "ISO/IEC 42001"]
+    closes: ["ASI01", "ASI06", "ASI08"]
+
+  - id: A16
+    name: "Drift monitoring (agreement/override rates) + weekly deflection ritual"
+    layer: assurance
+    owner: capability
+    chapters: [13, 15, 27]
+    palisade: ["hitl/gate.py", "evals/runner.py"]
+    frameworks: ["NIST AI RMF Measure/Manage", "ISO/IEC 42001 continual improvement"]
+    closes: ["drift", "ASI09"]
+
+  - id: A17
+    name: "Quarterly harness red-team scored vs. MITRE ATLAS + OWASP ASI"
+    layer: assurance
+    owner: redteam
+    accountable: risk_gov
+    chapters: [15, 23]
+    palisade: ["capabilities/adversarial_testing/"]
+    frameworks: ["MITRE ATLAS", "OWASP ASI", "ISO/IEC 42001"]
+    closes: ["ASI01", "ASI02", "ASI03", "ASI04", "ASI05", "ASI06", "ASI07", "ASI08", "ASI09", "ASI10"]
+
+  - id: A18
+    name: "Two-plane architecture; offensive plane air-gapped; no cross-plane credentials/tools"
+    layer: architecture
+    owner: platform
+    chapters: [4, 6, 24]
+    palisade: ["settings.py", "router.py", "policy/rego/"]
+    frameworks: ["containment", "NIST AI RMF Govern"]
+    closes: ["ASI03", "ASI10", "ASI07"]
+
+  - id: A19
+    name: "Model-routing policy (capability/sensitivity/residency/risk) incl. default-deny for less-restricted/open-weight models"
+    layer: model
+    owner: platform
+    chapters: [6]
+    palisade: ["router.py", "adapters/"]
+    frameworks: ["data residency", "governance", "EU AI Act GPAI inheritance"]
+    closes: ["ASI04", "ASI10"]
+
+  - id: A20
+    name: "Generated-artifact provenance, confinement, DLP egress controls, controlled teardown"
+    layer: guardrail
+    owner: redteam
+    chapters: [24]
+    palisade: ["capabilities/attack_simulation/"]
+    frameworks: ["containment", "supply chain", "NIST AI 600-1"]
+    closes: ["artifact leakage", "ASI05", "ASI10"]
+
+  - id: A21
+    name: "Signed feedback channel (authenticated reviewers only)"
+    layer: assurance
+    owner: capability
+    chapters: [13]
+    palisade: ["hitl/gate.py"]
+    frameworks: ["OWASP ASI06"]
+    closes: ["ASI06", "ASI09"]
+
+  - id: A22
+    name: "Per-tenant/per-engagement cryptographic isolation of context & memory"
+    layer: architecture
+    owner: platform
+    chapters: [9, 20]
+    palisade: ["memory.py", "context/retriever.py"]
+    frameworks: ["OWASP ASI03/ASI06", "GDPR Art. 32"]
+    closes: ["ASI03", "ASI06"]
+
+  - id: A23
+    name: "Cost budgets, token governance, denial-of-wallet protection"
+    layer: governance
+    owner: platform
+    chapters: [5, 19, 27]
+    palisade: ["loop.py"]
+    frameworks: ["FinOps", "availability"]
+    closes: ["ASI08", "denial-of-wallet"]
+
+  - id: A24
+    name: "Model/weight supply-chain verification (hash-pinned, provenance, backdoor checks)"
+    layer: model
+    owner: platform
+    chapters: [6]
+    palisade: ["adapters/openai_compat_client.py"]
+    frameworks: ["OWASP ASI04", "MITRE ATLAS AML.T0010", "SLSA-style provenance"]
+    closes: ["ASI04", "AML.T0010", "AML.T0020"]

@@ -1,0 +1,22 @@
+on_event:   # lifecycle.yaml: a scheduler runs the cadences above; these fire on change
+  model_version_change:
+    actions: [run_eval_gate_including_adversarial, block_promotions_until_pass, record_manifest]
+    control: A15
+  tool_version_or_description_change:
+    actions: [rehash_description, require_reapproval, refresh_sbom, pin_new_version]
+    control: A11
+  policy_change:
+    actions: [pull_request, opa_test, canary_bundle, record_revision]
+    control: A12
+  knowledge_change:
+    actions: [pull_request, owning_team_review, signed_commit]
+    control: C-28.1
+  cve_critical_or_high_in_mcp_server:
+    actions: [remediate_within_72h, auto_block_on_breach]
+    control: A11
+  agent_owner_departs:
+    actions: [reassign_owner_within_7d, else_deprovision_identity_and_revoke_grants]
+    control: A5
+  unsafe_execution_or_self_inflicted_outage:
+    actions: [drop_capability_to_rung_0, incident_process, replay_runs]
+    control: A14, A13

@@ -1,0 +1,26 @@
+# palisade/capabilities/attack_simulation/capability.yaml
+name: attack_simulation
+plane: offensive
+description: >
+  Emulates attacker tradecraft across the kill chain inside an air-gapped range,
+  using AI-generated scenario-specific test artifacts confined to the range, to
+  measure defensive improvement. Control-plane capability: containment,
+  authorization, provenance, accounting, fail-safe.
+requires_roe: true
+requires_dual_auth_for: ["high_impact"]
+tools:
+  - range_emulate_step             # the ONLY tool; scenario as ATT&CK IDs + objectives
+model_routing:
+  allow:
+    - rule: "offensive.generator.in_range"       # bound to the range by Control A19
+  default: deny
+containment:
+  air_gapped: true
+  default_route: false
+  egress: deny
+  dlp: enforce
+evals:
+  suite: evals/attack_simulation_suite.yaml
+metrics:
+  - detection_efficacy_ai_vs_static
+  - containment_integrity

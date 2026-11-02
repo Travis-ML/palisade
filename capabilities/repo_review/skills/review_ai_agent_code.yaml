@@ -1,0 +1,15 @@
+# palisade/capabilities/repo_review/skills/review_ai_agent_code.yaml
+skill: review_ai_agent_code
+version: 2
+description: Review first-party agent and MCP code against GP-AI principles.
+agent: spiffe://palisade.example/agent/repo-review
+scope_ceiling: {action_class: internal_change:semi_reversible:single, max_tier: DRAFT}
+required_gates: [pr_review]
+retrieval:
+  - {knowledge: golden_principles, filter: {applies_to: ai_agent}}
+  - {knowledge: harness_reference_patterns}        # Chapter 7 ACI examples, Chapter 14 spotlighting
+operating_prompt: prompts/review_ai_agent_code.md  # invariants: cite a principle or emit nothing
+output_schema: ReviewFinding
+evals:
+  corpus: evals/corpus/ai_agent/   # 60 labeled files: 35 violations across GP-AI-01..05, 25 clean
+  adversarial: evals/corpus/ai_agent_seeded/   # files whose comments instruct the reviewer

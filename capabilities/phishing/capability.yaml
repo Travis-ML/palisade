@@ -1,0 +1,20 @@
+# palisade/capabilities/phishing/capability.yaml
+name: phishing
+version: 1.2.0
+plane: defensive
+owner: soc-lead@palisade.example
+agent_id: spiffe://palisade.example/agent/phishing
+pattern: routing_chaining_with_agentic_scoping
+engagement_ids: [eng_2026q4_phishing]
+tools:
+  - {name: mail_get_message,      action_class: {domain: observe, reversibility: reversible, blast_radius: single}}
+  - {name: mail_search_messages,  action_class: {domain: observe, reversibility: reversible, blast_radius: group}}
+  - {name: siem_query,            action_class: {domain: observe, reversibility: reversible, blast_radius: group}}
+  - {name: idp_get_signins,       action_class: {domain: observe, reversibility: reversible, blast_radius: single}}
+  - {name: ti_lookup_indicator,   action_class: {domain: enrich,  reversibility: reversible, blast_radius: single}}
+  - {name: sandbox_detonate,      action_class: {domain: enrich,  reversibility: reversible, blast_radius: single}, per_run_limit: 12}
+forbidden_domains: [production_control, offense]      # remediation is delegated to the response capability
+remediation: {via: response, plan_template: phishing_v3, purge_canary_mailboxes: 5, confirmed_compromise_requires: authenticated_after_click}
+dedup: {fingerprint_attributes: [sender, return_path_domain, subject_normalized, url_host, attachment_sha256], min_match: 2}
+notify: {templates: templates/phishing/, audience_approval_threshold: 25, min_tone_score: 0.80}
+budget: {max_steps: 40, max_wall_seconds: 600, max_tokens: 200000, max_cost_usd: 1.20, max_tool_calls: 36}

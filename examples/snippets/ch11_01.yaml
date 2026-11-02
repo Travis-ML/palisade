@@ -1,0 +1,56 @@
+engagement_id: eng_2026q4_soc_triage
+name: "Q4 2026 SOC alert triage and bounded response, tenant-acme"
+plane: defensive
+owner: "ir-lead@palisade.example"
+approvers:
+  - "ir-lead@palisade.example"
+  - "soc-senior-oncall@palisade.example"
+stop_authorities:
+  - "ir-lead@palisade.example"
+  - "ciso@palisade.example"
+  - "soc-senior-oncall@palisade.example"
+scope:
+  in_scope:
+    - "tenant:tenant-acme"
+    - "asset_group:workstations-*"
+    - "asset_group:servers-tier3"
+    - "cidr:10.20.0.0/16"
+    - "cidr:10.21.0.0/16"
+    - "mailbox:*@palisade.example"
+    - "user:u.*"
+  out_of_scope:
+    - "asset_group:domain-controllers"
+    - "asset_group:payments-*"
+    - "cidr:10.20.250.0/24"          # OT gateway segment, carved out of the /16
+    - "user:svc.*"                    # service accounts: never touched by triage
+    - "user:u.exec.*"                 # executive accounts: human-only
+ceilings:
+  - action_class: {domain: observe, reversibility: reversible, blast_radius: single}
+    max_tier: 5
+  - action_class: {domain: enrich, reversibility: reversible, blast_radius: single}
+    max_tier: 5
+    rate_limit: "600/1h"              # external TI lookups: denial-of-wallet cap
+  - action_class: {domain: internal_change, reversibility: semi_reversible, blast_radius: single}
+    max_tier: 4                       # tickets, draft rules
+  - action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: single}
+    max_tier: 4
+    rate_limit: "1/10m"               # one isolation or quarantine per ten minutes
+  - action_class: {domain: production_control, reversibility: irreversible, blast_radius: single}
+    max_tier: 3                       # revoke sessions, reset credential: approval, five questions
+  - action_class: {domain: production_control, reversibility: semi_reversible, blast_radius: group}
+    max_tier: 3
+    rate_limit: "1/1h"
+data_handling:
+  retention: "ledger 400d; raw mail bodies 30d"
+  residency: "us-east only; no cross-region replication of raw content"
+  pii: "tokenize at capture; re-identification requires privacy-officer ticket"
+  egress: "no raw alert content to external TI providers; indicators only"
+not_before: "2026-10-01T00:00:00Z"
+not_after: "2026-12-31T23:59:59Z"
+stop_conditions:
+  - "override rate on autonomous actions exceeds 10% over any 7-day window"
+  - "any self-inflicted outage attributed to the harness"
+  - "two or more rate-limit escalations within one hour on production_control"
+  - "kill switch tripped by any stop authority"
+signature: null
+signer_key_id: null

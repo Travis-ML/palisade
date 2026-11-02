@@ -2,22 +2,31 @@
 
 Palisade is the reference harness built across *Engineering an Agentic AI Security Harness* (Travis Lelle, Edition 1.0, October 2026). It is pedagogical: error handling is thin, there are no retries, and each chapter says what production would add. The control plane is not thin.
 
-This repository is the Python package the book's code imports from. This README gets you set up and walks you through **Lab 1**, the first hands-on step in the book, where you map one of your own automations against the harness layers and classify what it does using the shared types.
+This repository is the Python package the book's code imports from: the shared types, every module the chapters build, and the book's other code examples. This README gets you set up, says where things are, and walks you through **Lab 1**, the first hands-on step in the book, where you map one of your own automations against the harness layers and classify what it does using the shared types.
 
 ## What is in this repository
+
+The repository root is the `palisade` package. `core/types.py` is the shared vocabulary and the one file you never edit. Every other module is the code the book builds chapter by chapter, collected here so you can read it, run it, or compare it with your own build. Appendix H.2 shows the layout and Appendix H.4 maps each module to the chapter that builds it.
 
 ```text
 palisade/                # this repository, once cloned into your working directory
   README.md
   __init__.py
-  core/
-    __init__.py
-    types.py             # the shared vocabulary; already written; import it, never redefine it
+  core/types.py          # the shared vocabulary; import it, never redefine it
+  settings.py  loop.py  router.py  gateway.py  roe.py  memory.py  bootstrap.py
+  adapters/  tools/  context/  ledger/  identity/  hitl/  policy/  guardrails/
+  evals/  compliance/  deploy/  finops/  labs/
+  capabilities/          # the playbooks of Chapters 17 to 24 and the Chapter 28 example, each with its capability.yaml
+  tests/                 # the chapters' tests; tests/shapes/ holds the ones printed as shapes (see below)
+  examples/              # everything else the book shows (see examples/README.md)
 ```
 
-`core/types.py` is the only module that ships complete. Everything else in Palisade (the governed loop, router, gateway, ledger, policy engine, and the rest) is built chapter by chapter from the code in the book, one module per chapter, in the sections titled "Palisade build thread." Appendix H.2 shows the full layout the package grows into and Appendix H.4 maps each module to the chapter that builds it.
+This is pedagogical code, and the later chapters say so:
 
-Every snippet in the book imports its types from `palisade/core/types.py`, so a snippet dropped next to this folder will find the names it expects.
+- The control plane (types, ledger, gateway, RoE, broker, policy engine, approval gate, kill switch, tier registry) imports together and behaves as the chapters describe. The Rego policy passes `opa test`, and the tests in `tests/` pass against a local OPA server.
+- The capability chapters (17 to 24) are reference shapes. They call product adapters for the EDR, SCM, SAST, hypervisor, and similar systems that the book names and does not implement; you supply those for your environment.
+- `tests/shapes/` holds tests the book prints as shapes. They need fixtures (scripted model clients, fake ledgers) that the chapters describe in words. They are excluded from collection until you write the fixtures.
+- `policy/rego/data.json` is generated from the tool catalog and the autonomy matrix. Regenerate it with `python -m palisade.policy.build_data > palisade/policy/rego/data.json` whenever either changes.
 
 ## Set up
 
@@ -30,10 +39,19 @@ python3.12 -m venv .venv
 source .venv/bin/activate          # Windows: .venv\Scripts\activate
 python -m pip install --upgrade pip
 pip install "pydantic>=2"          # all that types.py needs
+pip install -r palisade/examples/lab/requirements-lab.txt   # the rest of the package imports these (not needed for Lab 1)
 python -c "import palisade.core.types as t; print(t.ActionClass)"
 ```
 
-If the last line prints a class, you are ready. `ModuleNotFoundError: No module named 'palisade'` means Python is running from inside the clone; run `cd ..` and try again. Later chapters need more packages and, for the policy engine and the range, Docker. Appendix H.6 lists the packages and Appendix I sets up the lab environment; you do not need either for Lab 1.
+If the last line prints a class, you are ready. `ModuleNotFoundError: No module named 'palisade'` means Python is running from inside the clone; run `cd ..` and try again. Later chapters need the packages in `examples/lab/requirements-lab.txt` (Appendix H.6 explains each) and, for the policy engine and the range, Docker and OPA. Appendix I sets up the lab environment. You need none of that for Lab 1.
+
+To run the tests, from the same working directory:
+
+```bash
+opa run --server --addr 127.0.0.1:8181 --log-level error palisade/policy/rego/ &
+python -m pytest palisade/tests          # the OPA-backed cases skip themselves if no server is listening
+opa test palisade/policy/rego/ -v
+```
 
 ## About `core/types.py`
 
@@ -182,4 +200,4 @@ Paste your own key at the bottom of `lab1-inventory.md`.
 - **Appendix H**: the repository layout, `types.py` reproduced in full, the module-by-module map, canonical names, and installation.
 - **Appendix I**: the lab environment (Docker Compose, the policy engine, the trace collector, and the isolated range).
 
-To build Palisade along with the book, start at Chapter 4, where the first skeleton goes in, and follow each chapter's Palisade build thread. Labs that run code have an entry point at `palisade/labs/chNN.py`, run as `python -m palisade.labs.ch09` (Appendix H.2).
+To build Palisade along with the book, start at Chapter 4, where the first skeleton goes in, and follow each chapter's Palisade build thread. The labs' runner scripts (`palisade/labs/chNN.py` in Appendix H.2) are yours to write from the lab steps; `labs/common.py` holds the shared helpers and Appendix I.8 says what the rest of the lab kit is. The scripts the labs print from live in `examples/labs/`.

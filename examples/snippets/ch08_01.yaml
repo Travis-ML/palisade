@@ -1,0 +1,15 @@
+---
+item_id: runbooks/idp/oauth-consent-grant
+version: 4
+kind: runbook
+trust_tier: enterprise
+owner: detection-engineering@palisade.example
+last_verified: 2026-09-22
+review_interval_days: 90
+applies_to: ["idp.oauth.consent_granted", "idp.oauth.app_added"]
+links:
+  - detections/idp/oauth_consent_grant_new_app
+  - intel/reports/oauth-app-abuse-campaign
+  - skills/soc/triage_oauth_consent_grant
+signed_by: detections-2026q4
+---

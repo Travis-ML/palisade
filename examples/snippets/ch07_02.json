@@ -1,0 +1,36 @@
+[
+  {
+    "name": "edr_get_host",
+    "description": "Return the EDR record for one host: role, criticality, owner team, isolation state, open alerts. Read-only. Call before any containment action so preconditions are in context.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "host_id": {"type": "string", "pattern": "^host-\\d{4,6}$", "description": "Absolute EDR host identifier, e.g. host-4471"}
+      },
+      "required": ["host_id"],
+      "additionalProperties": false
+    }
+  },
+  {
+    "name": "edr_isolate_host",
+    "description": "Network-isolate ONE host for a bounded time. Semi-reversible, single-object, production control. The server releases the isolation automatically when ttl_minutes expires. Domain controllers cannot be isolated with this tool. Requires the five-question intent.",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "host_id": {"type": "string", "pattern": "^host-\\d{4,6}$"},
+        "ttl_minutes": {"type": "integer", "minimum": 15, "maximum": 240},
+        "reason": {"type": "string", "minLength": 20, "maxLength": 500},
+        "intent": {
+          "type": "object",
+          "properties": {
+            "intent": {"type": "string"}, "necessity": {"type": "string"}, "harm": {"type": "string"},
+            "data": {"type": "string"}, "alternatives": {"type": "string"}
+          },
+          "required": ["intent", "necessity", "harm", "data", "alternatives"]
+        }
+      },
+      "required": ["host_id", "ttl_minutes", "reason", "intent"],
+      "additionalProperties": false
+    }
+  }
+]

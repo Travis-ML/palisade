@@ -1,0 +1,5 @@
+// poc/identity.kql: what does the product's principal actually touch?
+AADServicePrincipalSignInLogs
+| where TimeGenerated > ago(7d)
+| where ServicePrincipalName =~ "vendor-ai-soc-poc"
+| summarize sign_ins = count(), resources = make_set(ResourceDisplayName) by bin(TimeGenerated, 1d)

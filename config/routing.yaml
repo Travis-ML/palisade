@@ -1,0 +1,109 @@
+# palisade/config/routing.yaml
+# First matching rule wins. No match means deny. Model ids come from settings.
+version: "2026-10-01"
+
+models:
+  frontier:
+    model_id: "{settings.models.frontier}"
+    version: "{settings.models.frontier_version}"
+    provider: anthropic
+    locus: managed_api
+    plane: defensive
+    restrictiveness: filtered
+    capability_tier: frontier
+    residency: [us]
+    max_sensitivity: confidential
+
+  fast:
+    model_id: "{settings.models.fast}"
+    version: "{settings.models.fast_version}"
+    provider: anthropic
+    locus: managed_api
+    plane: defensive
+    restrictiveness: filtered
+    capability_tier: small
+    residency: [us]
+    max_sensitivity: confidential
+
+  log_classifier:
+    model_id: log-classifier
+    version: "2026.09.2"              # SFT lineage recorded in the model registry (Section 6.7)
+    provider: openai_compat
+    locus: self_hosted
+    plane: defensive
+    restrictiveness: filtered
+    capability_tier: specialized
+    residency: [us, vpc]
+    max_sensitivity: regulated
+    endpoint: http://vllm-defensive.palisade.svc:8000
+
+  vpc_general:
+    model_id: vpc-general-70b
+    version: "r3"
+    provider: openai_compat
+    locus: self_hosted
+    plane: defensive
+    restrictiveness: filtered          # an open-weight model with its safety tuning intact
+    capability_tier: standard
+    residency: [us, vpc]
+    max_sensitivity: regulated
+    endpoint: http://vllm-defensive.palisade.svc:8000
+    weights_provenance: /srv/models/vpc-general-70b/provenance.yaml
+
+  range_analyst:
+    model_id: range-analyst
+    version: "analyst-8b@3f9c2a1"       # name@upstream-revision
+    provider: openai_compat
+    locus: self_hosted
+    plane: offensive
+    restrictiveness: open_weight
+    capability_tier: standard
+    residency: [range]
+    max_sensitivity: confidential
+    endpoint: http://vllm-range.range.internal:8000
+    weights_provenance: /srv/models/analyst-8b/provenance.yaml
+    capture_full_content: true
+    allowed_task_types:
+      - malware.analysis
+      - tooling.explain
+      - exploit.reasoning
+      - range.operate
+
+rules:
+  - rule_id: regulated.stays.in.vpc
+    description: Regulated data never leaves the VPC.
+    match: {planes: [defensive], min_sensitivity: regulated}
+    model: vpc_general
+    params: {temperature: 0.0, max_tokens: 4096}
+
+  - rule_id: triage.verdict.frontier
+    description: Verdicts and hypotheses need frontier reasoning; sub-2-minute SLA.
+    match: {task_types: [triage.verdict, triage.hypothesize, hunt.synthesize], planes: [defensive]}
+    model: frontier
+    params: {temperature: 0.0, max_tokens: 4096}
+
+  - rule_id: triage.enrich.fast
+    description: Extraction, classification, and routing on the small model.
+    match: {task_types: [triage.enrich, alert.classify, ioc.extract, phishing.route], planes: [defensive]}
+    model: fast
+    params: {temperature: 0.0, max_tokens: 1024}
+
+  - rule_id: log.classify.specialized
+    description: Log-line classification runs on the fine-tuned classifier.
+    match: {task_types: [log.classify], planes: [defensive]}
+    model: log_classifier
+    params: {temperature: 0.0, max_tokens: 64}
+
+  - rule_id: range.analysis.openweight
+    description: Authorized analysis and range operation on the offensive plane only.
+    match:
+      task_types: [malware.analysis, tooling.explain, exploit.reasoning, range.operate]
+      planes: [offensive]
+      requires_active_roe: true
+    model: range_analyst
+    params: {temperature: 0.0, max_tokens: 8192}
+
+  - rule_id: range.deny.unlisted
+    description: Nothing else runs on the offensive plane.
+    match: {planes: [offensive]}
+    effect: deny

@@ -1,0 +1,11 @@
+{
+  "name": "run_edr_command",
+  "description": "Run a command against the EDR platform. Supports isolate, release, scan, collect, and kill. Example: isolate host-4471",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "cmd": {"type": "string", "description": "The command to run"}
+    },
+    "required": ["cmd"]
+  }
+}

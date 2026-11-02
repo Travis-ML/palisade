@@ -1,0 +1,17 @@
+# palisade/capabilities/adversarial_testing/config/promptfoo_redteam.yaml
+providers:
+  - id: "http://target.range.local:8000/v1/chat/completions"
+redteam:
+  plugins:                         # promptfoo red-team plugins, by category
+    - pii                          # ASI03 leakage
+    - prompt-injection             # ASI01
+    - excessive-agency             # ASI02 tool misuse
+    - hijacking                    # ASI01 goal hijack
+  strategies:                      # how the plugin categories are applied, not their content
+    - basic
+    - multi-turn
+  numTests: 50
+defaultTest:
+  assert:
+    - type: moderation             # scored pass/fail against matrix finding criteria
+outputPath: "eng_2026q4_atest_07/promptfoo/results.json"
