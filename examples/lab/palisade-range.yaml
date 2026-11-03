@@ -1,0 +1,19 @@
+# lab/palisade-range.yaml (the range's configuration; no secrets in this file)
+# Mounted at /app/lab/palisade-range.yaml. Every URL names a service on range_net, so nothing here resolves outside it.
+plane: offensive
+agent:
+  agent_id: spiffe://palisade.example/agent/range
+  display_name: Range emulation agent
+  owner: red-team-lead@palisade.example
+models:
+  contained: ${LAB_OPEN_WEIGHT_MODEL}   # the directory name from lab/.env; resolved by your deployment tooling, never hard-coded
+  api_base: http://vllm:8000            # the vllm service; the adapter appends /v1/chat/completions
+  # No frontier or fast model: the offensive plane has no route to a managed API, and bind_plane refuses one.
+endpoints:
+  opa_url: http://opa-range:8181
+  ledger_url: http://otel-collector-range:4318
+  broker_url: http://broker-range:8443
+  killswitch_url: http://killswitch-range:8080
+  otel_endpoint: http://otel-collector-range:4318
+  mcp_servers:
+    range_emulate_step: http://mcp-range:8000

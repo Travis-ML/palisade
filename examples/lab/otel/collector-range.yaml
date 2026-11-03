@@ -1,0 +1,25 @@
+# lab/otel/collector-range.yaml
+# The range's collector. It differs from lab/otel/collector.yaml in one way: its only exporter is the file on the
+# ledger_range volume. There is no debug exporter (it writes spans to the container log, which the host can read)
+# and nothing that opens a connection. Do not add an exporter that leaves range_net.
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch: {}
+
+exporters:
+  file:
+    path: /var/lib/otel/spans.jsonl
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [file]

@@ -4,7 +4,7 @@ Everything the book shows that is not part of the `palisade` package itself. Not
 
 | Folder | What it holds | Book |
 |---|---|---|
-| `lab/` | The Docker lab: compose file, Dockerfile, pinned requirements and image versions, OTel collector, range firewall rules, and `synth_siem.py`. Appendix I.1 expects `lab/` beside `palisade/` in your working directory, so copy it there: `cp -r palisade/examples/lab ./lab` | Appendix I |
+| `lab/` | The Docker lab: compose file, Dockerfile, pinned requirements and image versions, the defensive and range OTel collectors, the range's Palisade configuration, range firewall rules, and `synth_siem.py`. Appendix I.1 expects `lab/` beside `palisade/` in your working directory, so copy it there: `cp -r palisade/examples/lab ./lab` | Appendix I |
 | `labs/` | The scripts several chapter labs run (`lab05_run.py`, `lab06_route.py`, `lab26.py`, `lab27.py`). Run from your working directory with `PYTHONPATH=. python palisade/examples/labs/lab26.py`. `lab05_run.py` and `lab06_route.py` are excerpts that need the fakes and routing file the lab steps have you write | Chapters 5, 6, 26, 27 |
 | `scripts/` | Worked examples and utilities: `sign_roe.py` (RoE signing), `run_first_loop.py` (the first governed run), the Chapter 2 round trip, the Chapter 3 injection experiment, the Chapter 10 worked example, the Chapter 15 PyRIT campaign, and the Chapter 25 scorer | Chapters 2, 3, 10, 11, 15, 25, Appendix H |
 | `poc/` | The vendor proof-of-concept checks and the scorer | Chapter 25 |
